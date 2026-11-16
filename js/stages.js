@@ -88,7 +88,7 @@ async function missionBrief() {
   await new Promise(res => {
     const go = btn('Let’s go!', 'teal pulse', res);
     const steps = [['clue_party', '1', 'Set our bar', 'What every box should manage'], ['st_cook', '2', 'Run it and check', 'Did we reach our bar?'], ['opt_batch', '3', 'Change the plan', 'When the night changes']];
-    const cards = steps.map(([i, n, t, d]) => h('div', { class: 'card', style: { width: '380px' } }, h('div', { class: 'badge' }, n), img(i, 'art'), h('b', {}, t), h('span', {}, d)));
+    const cards = steps.map(([i, n, t]) => h('div', { class: 'card', style: { width: '340px' } }, h('div', { class: 'badge' }, n), img(i, 'art'), h('b', {}, t)));
     guide(() => ({ el: go, text: 'Ready? Tap here', id: 'brief_go' }));
     screen(panel(head(null, 'Nobody will tell you what “good enough” means tonight.', 'Our name is on every box. Your team decides what good enough means, tests it and changes it. At midnight, you judge the night.'),
       h('div', { class: 'cards' }, cards), h('div', { class: 'row' }, go)));
@@ -184,9 +184,11 @@ function barEditor({ kind = 1, clues, title, sub, old }) {
       else picker = chipRow(custList, v => (kind === 1 ? b.custom : b.custom2) === v, v => { if (kind === 1) b.custom = v; else b.custom2 = v; });
       const clueEls = clues.map(c => { const e = h('button', { class: 'clue' + (b.links[S.k] === c.id ? ' on' : '') + (c.fresh ? ' new' : '') }, img(c.img), c.text);
         tap(e, () => { b.links[S.k] = c.id; clueEls.forEach(x => x.classList.toggle('on', x === e)); sfx.chime(); fxAt('fx_ting', e, { size: 80, fps: 12 }); paintPreview(); upd(); }); return e; });
-      upd = () => { const v = has(S.k), l = !!b.links[S.k]; nextB.disabled = !(v && l); nextB.classList.toggle('pulse', v && l); nextB.textContent = !v ? 'Choose first' : !l ? 'Pick the message that helped' : n === STEPS.length - 1 ? 'Lock our bar' : 'Next part'; };
+      upd = () => { const v = has(S.k), l = !!b.links[S.k]; if (v && clueWrap.style.visibility !== 'visible') { clueWrap.style.visibility = 'visible'; gsap.fromTo(clueWrap, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: .35 }); } nextB.disabled = !(v && l); nextB.classList.toggle('pulse', v && l); nextB.textContent = !v ? 'Choose first' : !l ? 'Pick the message that helped' : n === STEPS.length - 1 ? 'Lock our bar' : 'Next part'; };
       const q = h('div', { class: 'q' }); const clueRow = h('div', { class: 'clues', style: { maxWidth: '1500px' } }, clueEls);
-      body.append(h('div', { class: 'qlab' }, `Part ${n + 1} of 3`), q, picker, h('div', { class: 'qlab', style: { marginTop: '6px', color: '#8FF0E2' } }, 'Which message helped you choose?'), clueRow);
+      // one decision at a time: the clues appear once a setting is chosen (space is kept, so nothing jumps)
+      const clueWrap = h('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', visibility: has(S.k) ? 'visible' : 'hidden' } }, h('div', { class: 'qlab', style: { marginTop: '6px', color: '#8FF0E2' } }, 'Which clue helped?'), clueRow);
+      body.append(h('div', { class: 'qlab' }, `Part ${n + 1} of 3`), q, picker, clueWrap);
       guide(() => !has(S.k) ? { el: picker, text: 'First, choose here', id: 'bar_pick' } : !b.links[S.k] ? { el: clueRow, text: 'Which message helped you choose? Tap it.', id: 'bar_clue' } : { el: nextB, text: 'Tap to go on', id: 'bar_next' });
       q.textContent = S.q; gsap.from(picker, { y: 20, opacity: 0, duration: .4, delay: .1 }); stagger(clueEls, .05); upd();
     }
@@ -271,7 +273,7 @@ function barLines(b, st, shift) {
   if (cust === 'we tell people the real time') L.push(['We told people the real time', c.promise, c.promiseOf, 'custom', c.promiseOf ? 'came when we said' : 'we didn’t give a time']);
   return L;
 }
-function judgeScreen({ lines, eyebrow, title, side, logEv, button }) {
+function judgeScreen({ lines, eyebrow, title, side, logEv, button, why = true }) {
   const marks = {};
   return new Promise(res => {
     const go = btn('Mark every line first', 'teal', () => res(marks)); go.disabled = true;
@@ -280,15 +282,10 @@ function judgeScreen({ lines, eyebrow, title, side, logEv, button }) {
       const set = m => { marks[k] = m; p.classList.toggle('on', m === 'pass'); f.classList.toggle('on', m === 'fail'); sfx.tick(); go.disabled = Object.keys(marks).length < lines.length; go.classList.toggle('pulse', !go.disabled); go.textContent = go.disabled ? 'Mark every line first' : button; log(logEv, { line: k, team_mark: m, actual: `${a} of ${b}` }); };
       tap(p, () => set('pass')); tap(f, () => set('fail')); grid.append(h('div', { class: 'ln' }, l), xofy(a, b, cap), h('div', { class: 'pf' }, p, f)); });
     guide(() => { const i = lines.findIndex(l => !marks[l[3]]); return i >= 0 ? { el: grid.querySelectorAll('.pf')[i], text: 'Did this line reach your bar? Tap Pass or Fail.', id: logEv + '_mark' } : { el: go, text: 'Tap here to go on', id: logEv + '_next' }; });
-    screen(panel(head(eyebrow, title, '<b>Pass</b> = it reached your bar. <b>Fail</b> = it didn’t. An honest mark shows what to change.'),
+    screen(panel(head(eyebrow, title, '<b>Pass</b> = it reached your bar. <b>Fail</b> = it didn’t.' + (why ? ' An honest mark shows what to change.' : '')),
       side ? h('div', { class: 'row', style: { gap: '50px', alignItems: 'flex-start', flexWrap: 'nowrap' } }, grid, side) : grid, h('div', { class: 'row' }, go)));
     gsap.from('.results > *', { opacity: 0, y: 20, stagger: .05, duration: .4 });
   });
-}
-function teamworkFact(helps) {
-  if (!helps.length) return h('div', { class: 'rv' }, img('ico_highfive'), 'Nobody used HELP this shift');
-  const by = {}; helps.forEach(x => { const key = `${x.child === 'unknown' ? 'Someone' : nameOf(x.child)} → ${STATIONS.find(s => s.k === x.to).name}`; by[key] = (by[key] || 0) + 1; });
-  return h('div', { class: 'rv', style: { alignItems: 'flex-start' } }, img('ico_highfive'), h('div', {}, `${helps.length} time${helps.length > 1 ? 's' : ''} someone jumped in to help`, h('small', {}, Object.entries(by).map(([k, n]) => `${k}${n > 1 ? ` ×${n}` : ''}`).join(' · '))));
 }
 export async function s5() {
   ensureDefaults(); stopShift(); hud(true); zones(false); setBarSign(barText(G.bar), false); K3.setCam('plan', 1.4); $('#tickets').innerHTML = ''; $('#tickets').dataset.k = '';
@@ -297,12 +294,11 @@ export async function s5() {
   const lines = barLines(G.bar, st, 1);
   const mx = Math.max(1, ...Object.values(st.waits)); const pk = PACKS[G.pack];
   const side = h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px', width: '480px' } },
-    h('div', { class: 'eyebrow' }, 'Where orders waited (avg minutes)'),
+    h('div', { class: 'eyebrow' }, 'Where orders waited'),
     h('div', { class: 'waits' }, STATIONS.map(s => h('div', { class: 'w' }, h('b', {}, `${Math.round(st.waits[s.k])} min`), h('i', { style: { height: `${8 + st.waits[s.k] / mx * 100}px`, background: s.col } }), s.name))),
     h('div', { class: 'eyebrow', style: { marginTop: '6px' } }, 'What customers said'),
     ...topReviews(st.reviews, 3).map(r => h('div', { class: 'rv' }, img(r.emoji), `${r.text} ×${r.count}`)),
-    h('div', { class: 'eyebrow', style: { marginTop: '6px' } }, 'Helping each other'), teamworkFact(st.helps),
-    c.waiting ? h('div', { class: 'rv' }, img(pk.img), `${c.waiting} order${c.waiting > 1 ? 's' : ''} still in the kitchen at 10 pm`) : null);
+    null);
   const marks = await judgeScreen({ lines, eyebrow: '10:00 pm', title: `${c.n} ${c.n === 1 ? 'box' : 'boxes'} delivered. Did tonight reach your bar?`, side: null, logEv: 'bar_judged', button: 'Next: why?' });
   await reflect(marks, lines, side);
   await reveal(st);
@@ -332,7 +328,7 @@ async function reveal(st) {
     const pk = PACKS[G.pack], c = st.counts;
     const pcard = h('div', { class: 'card tall' }, img(pk.img, 'art'), h('b', {}, pk.name), h('span', {}, `Arrived hot: ${c.hot} of ${c.n}`), h('span', {}, `Cost tonight: ₹${c.n * pk.cost}`), t.squashed ? h('span', {}, `Squashed cakes: ${t.squashed}`) : null);
     const row = h('div', { class: 'cards' }, cards, pcard);
-    screen(panel(head(null, 'Your first box met real orders', 'Use the card backs to choose your change.'), row, h('div', { class: 'row' }, go)));
+    screen(panel(head(null, 'Your first box met real orders', null), row, h('div', { class: 'row' }, go)));
     stagger([...row.children], .1);
     cards.forEach((c, i) => setTimeout(() => { c.classList.add('back'); sfx.chime(); }, 900 + i * 700));
     setTimeout(() => { go.style.visibility = 'visible'; go.classList.add('pulse'); }, 900 + cards.length * 700);
@@ -472,6 +468,8 @@ const WHEN = { '35': ['within 35 minutes', 'Each box: within 35 min.'], '60': ['
 const ROUTE = { far: ['We’re starting with homes that are far away.', 'Far side first, then mid, then near.'], near: ['We’re starting with homes close by.', 'Near side first, then mid, then far.'], any: ['We deliver boxes as soon as they’re ready.', 'Any area: oldest box first.'] };
 const CHG = { batch: ['We’re sending nearby orders together.', 'Batch: boxes for the same area go on one trip.'], pickup: ['Live close by? You can collect your box.', 'Near orders: customer pickup. Skip those.'], pause: ['We paused new orders for 10 minutes to catch up.', 'No new orders for 10 min. Clear the door first.'], simplify: ['Our menu is a little smaller tonight.', 'Smaller menu: boxes ready faster.'], move: ['One of our cooks is helping with deliveries.', 'Extra person on Dispatch from now.'] };
 const FRIENDLY = ['Thank you for waiting!', 'Happy New Year from all of us!', 'Ride safe, see you soon.'];
+// replies screen: the sent message was just read aloud on the compose screen, so show its opening only
+const brief = t => { const w = String(t).split(' '); return w.length > 12 ? w.slice(0, 12).join(' ') + ' …' : t; };
 const DECOY = 'Dear all, due to unforeseen operational circumstances our delivery schedule has been revised. Please be advised orders will be fulfilled as soon as possible. Regards, Kitchen.';
 async function messages() {
   hud(false); $('#barSign').classList.add('hide');
@@ -488,7 +486,7 @@ async function messages() {
     const rows = groups.map(([k, label, list]) => { const opts = h('div', { class: 'opts' }, list.map(([v, l]) => { const c = h('button', { class: 'chip' }, l); tap(c, () => { f[k] = v; [...opts.children].forEach(x => x.classList.toggle('on', x === c)); sfx.tick(); upd(); }); return c; })); return h('div', { class: 'factrow' }, h('div', { class: 'k' }, label), opts); });
     function upd() { const ok = Object.values(f).every(Boolean); go.disabled = !ok; go.classList.toggle('pulse', ok); go.textContent = ok ? 'Next: write to families' : 'Agree every fact first'; }
     guide(() => { const i = groups.findIndex(g => !f[g[0]]); return i >= 0 ? { el: rows[i], text: 'Agree this one together', id: 'facts_' + groups[i][0] } : { el: go, text: 'Tap here', id: 'facts_go' }; });
-    screen(panel(head(null, 'Agree the facts once', 'Same facts for everyone. Next, you’ll choose the words.'), h('div', { class: 'factgrid' }, rows), h('div', { class: 'row' }, go)));
+    screen(panel(head(null, 'Agree the facts once', null), h('div', { class: 'factgrid' }, rows), h('div', { class: 'row' }, go)));
     stagger(rows, .06);
   });
   log('message_facts', { ...F });
@@ -514,7 +512,7 @@ async function messages() {
       const row = (label, opts, get, set) => { const o = h('div', { class: 'opts' }, opts.map(v => { const c = h('button', { class: 'chip' + (get() === v.key ? ' on' : '') }, v.text); tap(c, () => { set(get() === v.key ? null : v.key); [...o.children].forEach((x, i) => x.classList.toggle('on', get() === opts[i].key)); sfx.tick(); upd(); }); return c; })); return h('div', { class: 'frow' }, o); };   // the two wordings of one fact sit on one row; no row label needed
       const rows = facts.map(f => { const w = [{ key: 'fam', text: f.fam }, { key: 'rid', text: f.rid }]; if (order[f.k]) w.reverse(); return row(f.label, w, () => pick[side][f.k] || null, v => { if (v) pick[side][f.k] = v; else delete pick[side][f.k]; }); });
       rows.push(row('A friendly line', FRIENDLY.map(t => ({ key: t, text: t })), () => fr[side], v => { fr[side] = v; }));
-      const phone = h('div', { class: `phone wide ${fam ? 'cust' : 'rid'}` }, h('div', { class: 'ph' }, img(fam ? 'anya_phone' : 'kabir_radio'), fam ? 'To families' : 'To riders'), ...rows, h('div', { class: 'k', style: { font: '800 16px Nunito', letterSpacing: '.1em', color: '#4F5577' } }, 'YOUR MESSAGE'), out);
+      const phone = h('div', { class: `phone wide ${fam ? 'cust' : 'rid'}` }, h('div', { class: 'ph' }, img(fam ? 'anya_phone' : 'kabir_radio')), ...rows, h('div', { class: 'k', style: { font: '800 16px Nunito', letterSpacing: '.1em', color: '#4F5577' } }, 'YOUR MESSAGE'), out);
       tap(send, () => { sfx.whoosh(); gsap.to(phone, { y: -30, scale: .96, opacity: 0, duration: .45, ease: 'power2.in', onComplete: () => res('sent') }); });
       guide(() => !textOf(side) ? { el: phone, text: 'Tap the lines you want', id: `msg_${side}_pick` } : { el: send, text: 'Read it out loud. Then tap Send', id: `msg_${side}_send` });
       screen(h('div', { class: 'center', style: { gap: '14px', justifyContent: 'flex-start', paddingTop: '24px' } },
@@ -550,8 +548,8 @@ async function messages() {
     screen(h('div', { class: 'center', style: { gap: '22px' } }, head('Same facts, two audiences', 'How each audience heard you', null), h('div', { class: 'row', style: { gap: '50px', flexWrap: 'nowrap', alignItems: 'stretch' } }, cc.el, rc.el), h('div', { class: 'row' }, again, go)));
     popIn(cc.el); popIn(rc.el, .1); await wait(400);
     await Promise.all([
-      (async () => { await cc.msg(custTxt, { side: 'out' }); await cc.msg(famReply(), { delay: 900 }); })(),
-      (async () => { await wait(300); await rc.msg(ridTxt, { side: 'out' }); await rc.msg(ridReply(), { delay: 1100 }); })(),
+      (async () => { await cc.msg(brief(custTxt), { side: 'out' }); await cc.msg(famReply(), { delay: 900 }); })(),
+      (async () => { await wait(300); await rc.msg(brief(ridTxt), { side: 'out' }); await rc.msg(ridReply(), { delay: 1100 }); })(),
     ]);
     again.style.visibility = go.style.visibility = 'visible'; go.classList.add('pulse'); gsap.from([again, go], { scale: .7, opacity: 0, duration: .35, ease: 'back.out(2)' });
     const next = await new Promise(r => { tap(go, () => { sfx.select(); r('go'); }); tap(again, () => { sfx.select(); r('again'); }); });
@@ -606,22 +604,23 @@ export async function s9() {
     const card = h('div', { class: 'glass lookback' },
       h('div', { class: 'eyebrow' }, 'Our box'), h('div', { class: 'row', style: { gap: '18px' } }, boxIcons(G.box1 || G.box2), h('span', { class: 'dot' }, '→'), boxIcons(G.box2 || G.box1)),
       h('div', { class: 'eyebrow' }, 'What happened to our change'), ...(eff.length ? eff : ['We didn’t change one thing in Step 5.']).map(t => h('div', { class: 'lb' }, t)),
-      h('div', { class: 'lb muted' }, 'Remember: Shift 2 also had fewer riders and a new plan, so other things changed too.'),
+      h('div', { class: 'lb muted' }, 'Other things changed in Shift 2 too: fewer riders, a new plan.'),
       h('div', { class: 'eyebrow' }, 'Our promise'), h('div', { class: 'lb' }, promiseLine(s2)));
     guide(() => ({ el: go, text: 'Look together, then tap here', id: 's9_look' }));
-    screen(panel(head(null, 'What did our changes do?', 'Look together, then each of you explains one change.'), card, h('div', { class: 'row' }, go)));
+    screen(panel(head(null, 'What did our changes do?', null), card, h('div', { class: 'row' }, go)));
     popIn(card);
   });
   const changes = [];
   if (G.change1) changes.push({ id: 'c1', text: { dish: 'We swapped a food', packaging: 'We changed the box', balance: 'We gave a station an extra helper', bar: 'We changed the bar' }[G.change1.kind], tag: G.change1.kind });
   (G.replan || []).forEach(r => changes.push({ id: r, text: { batch: 'We batched orders by area', pickup: 'We offered customer pickup', pause: 'We paused new orders', simplify: 'We simplified the menu', move: 'We moved a child to Dispatch' }[r], tag: r }));
   changes.push({ id: 'bar2', text: `We changed the bar to “${barText(G.bar2).split(' · ')[0]}”`, tag: 'bar' });
+  // general Shift 1 counts are left out here: the new-bar and change-effect clues below cover them
   const evs = evidenceChips(s1, [
     { id: 'riders', text: 'Riders went from 12 to 6', img: 'ico_rider', tags: ['batch', 'pickup', 'pause', 'move', 'bar', 'simplify'] },
     { id: 'midclue', text: '“Just make it before midnight”', img: 'clue_midnight', tags: ['bar'] },
     { id: 's2ontime', text: `Shift 2: ${c2.dueOnTime} of ${c2.due} orders on time by our new bar`, img: 'emo_party', tags: ['bar', 'batch', 'pickup', 'pause', 'simplify', 'move', 'dish', 'packaging', 'balance'] },
     ...eff.slice(1).map((t, i) => ({ id: 'eff' + i, text: t, img: 'ico_template', tags: [G.change1?.kind] })),
-  ]);
+  ]).filter(e => e.id !== 'ontime' && e.id !== 'hot');
   await turns(p => new Promise(res => {
     G.onSkip = () => res('skip');
     let c = null, e = null; const go = btn('Pick a change and a reason', 'teal', () => res()); go.disabled = true;
@@ -727,16 +726,14 @@ export async function s11() {
   const s1 = G.stats.s1 || shiftStats(1), s2 = G.stats.s2 || shiftStats(2), b = G.bar2;
   K3.setCam('plan', 1.6);
   // judge the night by the team's own (new) bar
-  const marks = await judgeScreen({ lines: barLines(b, s2, 2), eyebrow: 'Midnight', title: 'By your own bar, how did the night go?', side: h('div', { style: { width: '420px', display: 'flex', flexDirection: 'column', gap: '10px' } }, h('div', { class: 'eyebrow' }, 'Our bar now'), h('div', { class: 'barnow' }, barText(b)), h('div', { class: 'eyebrow', style: { marginTop: '10px' } }, 'Helping each other'), teamworkFact(s2.helps)), logEv: 'bar2_judged', button: 'See our whole night' });
+  const marks = await judgeScreen({ lines: barLines(b, s2, 2), eyebrow: 'Midnight', title: 'By your own bar, how did the night go?', side: null, logEv: 'bar2_judged', button: 'See our whole night', why: false });
   // the whole night on one screen
-  const link = clueText(b.links?.time);
   await new Promise(res => {
     const go = btn('What we did tonight', 'teal pulse', res);
-    const photos = h('div', { class: 'photos', style: { gridTemplateColumns: 'repeat(2,200px)' } }, PHOTOS.slice(0, 4).map(p => img(p, '', { style: 'width:200px' })));
+    const photos = h('div', { class: 'photos', style: { gridTemplateColumns: '200px' } }, PHOTOS.slice(0, 2).map(p => img(p, '', { style: 'width:200px' })));
     const card = h('div', { class: 'glass nightcard' },
-      h('div', { class: 'eyebrow' }, 'Our bar'), h('div', { class: 'oldbar' }, (G.bar1 || {}).text || barText(G.bar)), h('div', { class: 'barnow' }, barText(b)), link ? h('div', { class: 'lb muted' }, `because: “${link}”`) : null,
+      h('div', { class: 'eyebrow' }, 'Our bar'), h('div', { class: 'oldbar' }, (G.bar1 || {}).text || barText(G.bar)), h('div', { class: 'barnow' }, barText(b)),
       h('div', { class: 'eyebrow' }, 'Our box'), h('div', { class: 'row', style: { gap: '14px', justifyContent: 'flex-start' } }, boxIcons(G.box1 || G.box2 || { menu: G.menu, pack: G.pack }), h('span', { class: 'dot' }, '→'), boxIcons(G.box2 || G.box1 || { menu: G.menu, pack: G.pack })),
-      ...(G.effect || effectLines(s1, s2)).map(t => h('div', { class: 'lb' }, t)),
       h('div', { class: 'eyebrow' }, 'Our promise'), h('div', { class: 'lb' }, promiseLine(s2)));
     guide(() => ({ el: go, text: 'Tap when you’ve looked', id: 's11_night' }));
     screen(h('div', { class: 'center', style: { flexDirection: 'row', gap: '40px', alignItems: 'center', justifyContent: 'center' } }, photos, h('div', { style: { display: 'flex', flexDirection: 'column', gap: '18px', alignItems: 'center' } }, card, go)));
@@ -748,13 +745,13 @@ export async function s11() {
   await new Promise(res => {
     const go = btn('Next: what did we learn?', 'teal pulse', res);
     const did = [['clue_party', 'Set your own bar from customer clues'], ['emo_ok', 'Judged it and changed one thing'],
-      helpN ? ['ico_highfive', `Jumped in to help ${helpN} time${helpN > 1 ? 's' : ''}`] : ['ico_highfive', 'Each ran a station and kept boxes moving'],
+      helpN ? ['ico_highfive', `Jumped in to help ${helpN} time${helpN > 1 ? 's' : ''}`] : null,
       ['ico_rider', 'Changed the plan and the bar when riders went home'],
       sentDecoy ? ['anya_phone', 'Messaged families and riders, and read how each heard it'] : ['anya_phone', 'Told families and riders the same facts in different words']];
     const c1 = s1.counts || {}, c2 = s2.counts;
     const found = [c1.due ? `Shift 1: ${c1.dueOnTime} of ${c1.due} orders on time by your first bar.` : null, c2.due ? `Shift 2: ${c2.dueOnTime} of ${c2.due} orders on time by your new bar.` : null, (G.effect || [])[1] || null].filter(Boolean);
     if (!found.length) found.push('Your bar changed when the night changed.');
-    const list = h('div', { class: 'didlist' }, h('div', { class: 'eyebrow' }, 'What you did'), ...did.map(([i, t]) => h('div', { class: 'rv' }, img(i), t)),
+    const list = h('div', { class: 'didlist' }, h('div', { class: 'eyebrow' }, 'What you did'), ...did.filter(Boolean).map(([i, t]) => h('div', { class: 'rv' }, img(i), t)),
       h('div', { class: 'eyebrow', style: { marginTop: '8px' } }, 'What you found'), ...found.map(t => h('div', { class: 'rv' }, img('ico_template'), t)));
     guide(() => ({ el: go, text: 'Read it together, then tap here', id: 's11_did' }));
     screen(panel(head(null, 'What a night!', null), list, h('div', { class: 'row' }, go)));

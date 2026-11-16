@@ -115,7 +115,7 @@ export function initScene(canvas) {
     lamps.push({ g, bulb, pl, shade });
   });
 
-  buildPrep(); buildCook(); buildPack(); buildDisp();
+  buildPrep(); buildCook(); buildPack(); buildDisp(); buildStreet(); initCloseups();
 
   // fireworks particles (behind the glass, in front of skyline)
   const N = 900, pos = new Float32Array(N * 3), col = new Float32Array(N * 3);
@@ -152,7 +152,7 @@ function buildCook() {
     const ringM = new THREE.MeshStandardMaterial({ color: 0x3A3F70, emissive: 0xFF7A2A, emissiveIntensity: 0, roughness: .4 });
     const ring = add(g, new THREE.Mesh(new THREE.TorusGeometry(.42, .055, 10, 36), ringM), bx, .2, .05, false); ring.rotation.x = -Math.PI / 2;
     const glow = new THREE.PointLight(0xFF8A3A, 0, 2.2, 2); glow.position.set(bx, .45, .1); g.add(glow);
-    burners.push({ ring, glow, x: bx, state: 'off', level: 0 });
+    burners.push({ ring, glow, x: bx, state: 'off', level: 0, flames: flameRing(g, bx), fl: 0 });
   });
   // pot (lathe) on burner 1
   const pts = []; for (let i = 0; i <= 10; i++) { const t = i / 10; pts.push(new THREE.Vector2(.45 + Math.sin(t * Math.PI) * .06, t * .6)); }
@@ -230,7 +230,11 @@ export function setStacks(pack, disp) {
   fill(packStack, pack, 6); fill(dispStack, disp, 9);
 }
 export function setRiders(free, total) { scooters.forEach((s, i) => { const vis = i < Math.round(free / Math.max(1, total) * 6); if (s.visible !== vis) { if (!vis) { gsap.to(s.position, { x: s.position.x + 6, duration: .9, ease: 'power2.in', onComplete: () => { s.visible = false; s.position.x -= 6; } }); } else { s.visible = true; gsap.from(s.position, { x: s.position.x + 6, duration: .9, ease: 'power2.out' }); } } }); }
-export function chop() { if (!parts.knife) return; gsap.fromTo(parts.knife.rotation, { z: 0 }, { z: .5, duration: .08, yoyo: true, repeat: 1 }); }
+export function chop() { const k = parts.knife; if (!k) return; if (!parts.knifeY) { gsap.fromTo(k.rotation, { z: 0 }, { z: .5, duration: .08, yoyo: true, repeat: 1 }); return; }
+  gsap.killTweensOf(k.position); gsap.killTweensOf(k.rotation); const y0 = parts.knifeY;
+  gsap.timeline().to(k.position, { y: y0 + .24, duration: .09, ease: 'power2.out' }).to(k.position, { y: y0, duration: .07, ease: 'power3.in', onComplete: cutSlice });
+  gsap.timeline().to(k.rotation, { z: -.2, duration: .09, ease: 'power2.out' }).to(k.rotation, { z: 0, duration: .07, ease: 'power3.in' });
+}
 export function rattleLid() { const l = parts.lid; if (!l) return; const y0 = l.userData.y0 ?? (l.userData.y0 = l.position.y); gsap.fromTo(l.position, { y: y0 }, { y: y0 + .07, duration: .08, yoyo: true, repeat: 3 }); }
 export function burstFirework(x = (Math.random() - .5) * 12, y = 4.5 + Math.random() * 2.5, hue, z = -6, sc = 1) {
   const cols = [[1, .82, .4], [.95, .55, .7], [.5, .75, .95], [.35, .9, .8], [1, .65, .2]]; const c = hue != null ? cols[hue % cols.length] : cols[Math.floor(Math.random() * cols.length)];
@@ -269,6 +273,7 @@ export function frame() {
     const st = steams[i]; const want = b.state === 'cook' || b.state === 'done' ? .9 : 0; st.s.material.opacity += (want - st.s.material.opacity) * .08;
     st.t.offset.x = Math.floor((U.t * 5 + st.ph) % 4) / 4; st.s.position.y = 1.45 + Math.sin(U.t * 1.4 + st.ph) * .05; });
   burners.forEach(b => { if (b.gl) b.gl.material.opacity = Math.min(.9, b.ring.material.emissiveIntensity * .45); });
+  liveFrame(dt);
   lamps.forEach(l => { if (l.halo) l.halo.material.opacity = Math.min(.55, l.bulb.material.emissiveIntensity * .25); if (l.pool) { const k = Math.min(1, l.bulb.material.emissiveIntensity / 2.2); l.pool.material.opacity = .28 * k; l.wpool.material.opacity = .16 * k; } });
   bulbs.forEach(b => { if (b.userData.gl) b.userData.gl.material.opacity = Math.min(.9, b.material.emissiveIntensity * .4); });
   if (parts.signGlow) parts.signGlow.material.opacity = openSign.material.emissiveIntensity * .35;
@@ -283,6 +288,7 @@ export function frame() {
   adapt(dt);
   cam.lookAt(camT);
   R.render(scene, cam);
+  closeupPass();
   return dt * 1000;
 }
 
@@ -301,12 +307,14 @@ export async function loadProps() {
   gl.scene.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.material.envMapIntensity = 1.0; } });
   const drop = grp => [...grp.children].forEach(c => { if (c.userData.proc) grp.remove(c); });
   // prep board + veg + knife
-  const board = get('board'); parts.prep.clear(); parts.prep.add(board); board.position.set(0, 0, 0); parts.knife = board.getObjectByName('knife');
+  const board = get('board'); parts.prep.clear(); parts.prep.add(board); board.position.set(0, 0, 0); parts.knife = board.getObjectByName('knife'); parts.board = board;
+  if (parts.knife) { parts.knife.rotation.order = 'YZX'; parts.knife.rotation.set(Math.PI / 2, 1.92, 0); parts.knife.position.set(.1, .17, .23); parts.knifeY = .17; }   // stands on its edge across the cucumber, ready to chop
+  parts.sliceSrc = board.getObjectByName('cuc_slice');
   // cook: stove, handi, karahi
   drop(parts.cook);
   const stove = get('stove'); parts.cook.add(stove); stove.position.set(0, -.05, .05);
   const pot = get('pot'); parts.cook.add(pot); pot.position.set(-1.15, .22, .05); parts.lid = pot.getObjectByName('pot_lid');
-  const kar = get('karahi'); parts.cook.add(kar); kar.position.set(0, .22, .05);
+  const kar = get('karahi'); parts.cook.add(kar); kar.position.set(0, .22, .05); parts.kar = kar; parts.paneer = kar.children.filter(c => /paneer/.test(c.name));
   burners.forEach(b => { b.ring.position.y = .14; b.ring.material.color.setHex(0x26283A); b.gl = glow(0xFF8A3A, 1.6, 0); b.gl.position.set(b.x, .3, .1); parts.cook.add(b.gl); });
   // lamps
   const lampSrc = get('lamp');
@@ -320,6 +328,7 @@ export async function loadProps() {
   // scooters
   const scSrc = get('scooter');
   scooters.forEach(s => { s.clear(); const c = scSrc.clone(true); s.add(c); });
+  rides.forEach(r => { r.sc.clear(); r.sc.add(scSrc.clone(true)); });
   const rail = get('rail'); scene.add(rail); rail.position.set(-4.5, 2.95, -2.98); rail.scale.setScalar(1.25);
   const tr = get('ticketrail'); scene.add(tr); tr.position.set(2.25, 2.85, -3.0);
   // warm light pools from each pendant onto the counter and wall (cheap baked-look)
@@ -335,6 +344,158 @@ let props = false;
 
 let _pool = null;
 function poolTex() { if (_pool) return _pool; const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d'); const r = g.createRadialGradient(128, 128, 0, 128, 128, 128); r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(.45, 'rgba(255,255,255,.45)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 256, 256); _pool = new THREE.CanvasTexture(c); return _pool; }
+
+/* ================= live action: gas flames, oil sizzle, chopping, riders leaving, close-ups =================
+   All procedural (canvas textures + primitives) on top of the Blender props; no new files. */
+const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
+let flameTex = null, spat = null, beamT = null, blobT = null;
+function flameRing(g, bx) {   // a ring of small gas flames under a pan: blue core, warm tips
+  if (!flameTex) flameTex = canvasTex(32, 64, (c, w, h) => { const r = c.createRadialGradient(16, 50, 1, 16, 40, 30); r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(.35, 'rgba(255,255,255,.7)'); r.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = r; c.beginPath(); c.moveTo(16, 2); c.quadraticCurveTo(30, 40, 16, 62); c.quadraticCurveTo(2, 40, 16, 2); c.fill(); });
+  const mk = col => new THREE.SpriteMaterial({ map: flameTex, color: col, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false });
+  const blue = mk(0x4C7DFF), warm = mk(0xFFA040), out = [];
+  for (let j = 0; j < 18; j++) { const a = j / 18 * Math.PI * 2, s = new THREE.Sprite(j % 2 ? warm : blue); s.position.set(bx + Math.cos(a) * .31, .2, .05 + Math.sin(a) * .31); s.userData.b = j % 2 ? .22 : .14; s.scale.set(.07, s.userData.b, 1); g.add(s); out.push(s); }
+  return { out, blue, warm };
+}
+function buildSpatter() {   // hot oil specks that hop out of a pan while it cooks
+  const N = 70, pos = new Float32Array(N * 3).fill(-99), geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  if (!glowTex) glow(0xffffff, 1);
+  const pts = new THREE.Points(geo, new THREE.PointsMaterial({ size: .045, map: glowTex, color: 0xFFE2A0, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
+  pts.frustumCulled = false; parts.cook.add(pts); spat = { pts, pos, vel: new Float32Array(N * 3), life: new Float32Array(N), n: N, head: 0 };
+}
+function liveFrame(dt) {
+  burners.forEach((b, i) => { const want = b.state === 'cook' ? 1 : b.state === 'done' ? .45 : 0; b.fl += (want - b.fl) * Math.min(1, dt * 9); const f = b.flames; if (!f) return;
+    f.blue.opacity = b.fl * .9; f.warm.opacity = b.fl * .75;
+    f.out.forEach((s, j) => { s.scale.y = s.userData.b * (.75 + .45 * Math.abs(Math.sin(U.t * (19 + j) + j * 2.1))) * (.5 + .5 * b.fl); });
+    if (spat && b.state === 'cook' && Math.random() < dt * 22) for (let k = 0; k < 2; k++) { const q = spat.head; spat.head = (q + 1) % spat.n; const a = Math.random() * 6.28, r = Math.random() * .3;
+      spat.pos.set([b.x + Math.cos(a) * r, .45, .05 + Math.sin(a) * r], q * 3); spat.vel.set([Math.cos(a) * .5, 1 + Math.random() * .9, Math.sin(a) * .5], q * 3); spat.life[q] = .45 + Math.random() * .3; } });
+  if (spat) { const p = spat.pos, v = spat.vel; for (let q = 0; q < spat.n; q++) { if (spat.life[q] <= 0) continue; spat.life[q] -= dt; v[q * 3 + 1] -= dt * 6; p[q * 3] += v[q * 3] * dt; p[q * 3 + 1] += v[q * 3 + 1] * dt; p[q * 3 + 2] += v[q * 3 + 2] * dt; if (spat.life[q] <= 0) p[q * 3 + 1] = -99; } spat.pts.geometry.attributes.position.needsUpdate = true; }
+  rides.forEach(r => { if (r.busy) { r.body.position.y = Math.abs(Math.sin(U.t * 16 + r.ph)) * .014; r.man.rotation.z = Math.sin(U.t * 3 + r.ph) * .015; } });
+}
+/* a cooking action: the karahi tosses its paneer, the pot lid rattles, oil jumps */
+export function toss(i = 0) {
+  if (i === 1 && parts.kar) { const k = parts.kar; gsap.timeline().to(k.rotation, { z: .14, duration: .12, ease: 'power2.out' }).to(k.rotation, { z: -.06, duration: .14 }).to(k.rotation, { z: 0, duration: .2, ease: 'power2.out' });
+    (parts.paneer || []).forEach((c, j) => { const y0 = c.userData.y0 ?? (c.userData.y0 = c.position.y); gsap.timeline({ delay: .06 + j * .02 }).to(c.position, { y: y0 + .22 + Math.random() * .12, duration: .2, ease: 'power2.out' }).to(c.position, { y: y0, duration: .22, ease: 'bounce.out' }); gsap.to(c.rotation, { x: c.rotation.x + (Math.random() - .5) * 3, y: c.rotation.y + Math.random() * 3, duration: .42 }); }); }
+  else if (i === 0) rattleLid();
+  if (spat) for (let k = 0; k < 14; k++) { const q = spat.head; spat.head = (q + 1) % spat.n; const bx = [-1.15, 0, 1.15][Math.min(i, 2)], a = Math.random() * 6.28; spat.pos.set([bx + Math.cos(a) * .2, .45, .05 + Math.sin(a) * .2], q * 3); spat.vel.set([Math.cos(a) * .8, 1.3 + Math.random() * 1.2, Math.sin(a) * .8], q * 3); spat.life[q] = .5 + Math.random() * .3; }
+}
+/* chopping: each knife stroke drops a fresh cucumber slice that tips over onto the board, and a few bits fly */
+const AX = V3(.94, 0, -.34).normalize(), PERP = V3(.34, 0, .94).normalize(), CUT = V3(-.01, .2, -.07);
+function cutSlice() {
+  const b = parts.board, src = parts.sliceSrc; if (!b || !src) return;
+  parts.slices ||= []; parts.cutN = (parts.cutN || 0) + 1; const k = parts.cutN % 7;
+  let s = parts.slices.length >= 7 ? parts.slices.shift() : null;
+  if (!s) { s = new THREE.Group(); const m = src.clone(); m.position.set(0, 0, 0); m.quaternion.identity(); s.add(m); b.add(s); }
+  parts.slices.push(s); gsap.killTweensOf(s.position); s.scale.setScalar(1);
+  const qa = new THREE.Quaternion().setFromUnitVectors(V3(0, 1, 0), AX), qb = new THREE.Quaternion().setFromEuler(new THREE.Euler((Math.random() - .5) * .25, Math.random() * 3, (Math.random() - .5) * .25));
+  const p0 = CUT.clone().addScaledVector(AX, -.04), p1 = CUT.clone().addScaledVector(AX, -.14 - Math.random() * .05).addScaledVector(PERP, -.12 + k * .065); p1.y = .1 + (k % 2) * .012;
+  const st = { t: 0 }; gsap.to(st, { t: 1, duration: .36, ease: 'power2.in', onUpdate: () => { s.quaternion.slerpQuaternions(qa, qb, st.t); s.position.lerpVectors(p0, p1, st.t); s.position.y += Math.sin(st.t * Math.PI) * .05; } });
+  // bits
+  parts.bits ||= Array.from({ length: 10 }, (_, j) => { const m = new THREE.Mesh(new THREE.BoxGeometry(.03, .022, .03), std(j % 3 ? 0xCFEFB4 : 0x3E8E41, { roughness: .5 })); m.visible = false; b.add(m); return m; });
+  for (let j = 0; j < 4; j++) { const m = parts.bits[(parts.cutN * 4 + j) % 10], a = Math.random() * 6.28, d = .12 + Math.random() * .2; m.visible = true; m.position.copy(CUT); m.scale.setScalar(1);
+    gsap.killTweensOf(m.position); gsap.to(m.position, { x: CUT.x + Math.cos(a) * d, z: CUT.z + Math.sin(a) * d, duration: .4, ease: 'power1.out' });
+    gsap.timeline().to(m.position, { y: .26 + Math.random() * .1, duration: .16, ease: 'power2.out' }).to(m.position, { y: .1, duration: .24, ease: 'bounce.out' });
+    gsap.to(m.rotation, { x: Math.random() * 6, y: Math.random() * 6, duration: .4 }); gsap.to(m.scale, { x: .01, y: .01, z: .01, duration: .3, delay: 1.1, onComplete: () => { m.visible = false; } }); }
+}
+
+/* ---------- the street outside the window, and riders leaving on their scooters ---------- */
+const ROAD = { y: 3.08, z: -5.85, curb: -4.55, x0: 8.9, x1: -10.4 };
+const rides = []; let puffs = [], riderM = null;
+function buildStreet() {
+  const g = new THREE.Group(); scene.add(g); parts.street = g;
+  const asphalt = canvasTex(1024, 256, (c, w, h) => { c.fillStyle = '#1B1D3C'; c.fillRect(0, 0, w, h);
+    for (let i = 0; i < 3000; i++) { const v = 34 + Math.random() * 40; c.fillStyle = `rgba(${v},${v},${v + 34},.35)`; c.fillRect(Math.random() * w, Math.random() * h, 2, 2); }
+    c.fillStyle = 'rgba(255,224,160,.55)'; for (let x = 0; x < w; x += 170) c.fillRect(x + 30, h * .5, 90, 7);
+    const gr = c.createLinearGradient(0, h - 50, 0, h); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,.45)'); c.fillStyle = gr; c.fillRect(0, h - 50, w, 50); });
+  asphalt.wrapS = THREE.RepeatWrapping; asphalt.repeat.set(3, 1);
+  const road = new THREE.Mesh(new THREE.PlaneGeometry(30, 4.2), std(0xffffff, { map: asphalt, roughness: .85 })); road.rotation.x = -Math.PI / 2; road.position.set(0, ROAD.y, ROAD.curb - 2.1); g.add(road);
+  const walk = new THREE.Mesh(new THREE.PlaneGeometry(30, 1.25), std(0x3A3E76, { roughness: .9 })); walk.rotation.x = -Math.PI / 2; walk.position.set(0, ROAD.y + .1, ROAD.curb + .62); g.add(walk);
+  add(g, box(30, .12, .14, std(0x8D90B8, { roughness: .7 }), .02), 0, ROAD.y + .05, ROAD.curb, false);
+  for (let i = 0; i < 3; i++) rides.push(riderRig());
+  if (!glowTex) glow(0xffffff, 1);
+  puffs = Array.from({ length: 6 }, () => { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0x8F94BC, transparent: true, opacity: 0, depthWrite: false })); scene.add(s); return s; });
+}
+function limb(p, a, b, r, m) { const A = V3(...a), d = V3(...b).sub(A), L = d.length(); const mesh = new THREE.Mesh(new THREE.CapsuleGeometry(r, L, 4, 12), m);
+  mesh.position.copy(A).addScaledVector(d, .5); mesh.quaternion.setFromUnitVectors(V3(0, 1, 0), d.normalize()); p.add(mesh); return mesh; }
+function riderRig() {
+  const M = riderM ||= { jacket: std(C.saffron, { roughness: .55 }), band: std(0xF2F2EA, { roughness: .3, emissive: 0x555548 }), pants: std(0x2A2E5C, { roughness: .8 }), glove: std(0x1D1F36, { roughness: .6 }), skin: std(0x8E5E43, { roughness: .7 }),
+    helmet: std(0xF5F0E6, { roughness: .22 }), stripe: std(C.tomato, { roughness: .3 }), visor: std(0x0D1024, { roughness: .06, metalness: .8 }), shoe: std(0x24263A, { roughness: .7 }) };
+  const g = new THREE.Group(), body = new THREE.Group(), sc = new THREE.Group(), man = new THREE.Group(), load = new THREE.Group(); g.add(body); body.add(sc, man); sc.add(scooter());
+  // the rider, seated, leaning into the handlebar (scooter faces +x; seat ~0.73 up)
+  limb(man, [-.22, .84, 0], [-.07, 1.19, 0], .14, M.jacket).scale.z = 1.3;
+  limb(man, [-.19, .92, 0], [-.18, .96, 0], .145, M.band).scale.z = 1.32;   // reflective band
+  limb(man, [-.06, 1.22, 0], [-.02, 1.3, 0], .05, M.skin);
+  const hel = new THREE.Mesh(new THREE.SphereGeometry(.16, 22, 16), M.helmet); hel.position.set(0, 1.43, 0); hel.scale.set(1.12, 1, 1); man.add(hel);
+  const vis = new THREE.Mesh(new THREE.SphereGeometry(.165, 22, 10, Math.PI - .95, 1.9, 1.05, .72), M.visor); vis.position.copy(hel.position); vis.scale.copy(hel.scale); man.add(vis);
+  const st = new THREE.Mesh(new THREE.SphereGeometry(.163, 20, 6, 0, Math.PI * 2, 0, .5), M.stripe); st.position.copy(hel.position); st.scale.copy(hel.scale); st.scale.x *= .4; man.add(st);
+  for (const z of [-1, 1]) {
+    limb(man, [-.08, 1.17, .17 * z], [.19, 1.03, .23 * z], .056, M.jacket); limb(man, [.19, 1.03, .23 * z], [.5, .98, .27 * z], .048, M.jacket);
+    const gl = new THREE.Mesh(new THREE.SphereGeometry(.056, 12, 10), M.glove); gl.position.set(.5, .98, .27 * z); man.add(gl);
+    limb(man, [-.2, .8, .1 * z], [.15, .84, .15 * z], .08, M.pants); limb(man, [.15, .84, .15 * z], [.16, .45, .14 * z], .066, M.pants);
+    const sh = box(.23, .09, .11, M.shoe, .035); sh.position.set(.2, .41, .14 * z); man.add(sh);
+  }
+  // tonight's boxes on the crate (one per order in the batch, up to 3)
+  load.position.set(-.55, 1.13, 0); body.add(load);
+  for (let i = 0; i < 3; i++) { const b = partyBox(); b.scale.setScalar(.32); b.position.set(0, i * .17, 0); b.rotation.y = (i - 1) * .2; load.add(b); }
+  // lights: headlamp glow + soft beam + light on the road ahead, tail light, contact shadow
+  const head = glow(0xFFF1C2, 1.0, .95); head.position.set(.62, .92, 0); body.add(head);
+  beamT ||= canvasTex(256, 128, (c, w, h) => { for (let k = 0; k < 6; k++) { const sp = .18 + k * .14, gr = c.createLinearGradient(0, 0, w, 0); gr.addColorStop(0, 'rgba(255,255,255,.22)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = gr; c.beginPath(); c.moveTo(0, h * .35); c.lineTo(w, h * (.35 - sp * .5)); c.lineTo(w, Math.min(h, h * (.35 + sp * 1.3))); c.closePath(); c.fill(); } });
+  const beam = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 1.1), new THREE.MeshBasicMaterial({ map: beamT, color: 0xFFE6B0, transparent: true, opacity: .5, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, toneMapped: false }));
+  beam.position.set(.62 + 1.4, .755, 0); body.add(beam);
+  const pool = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.1), new THREE.MeshBasicMaterial({ map: poolTex(), color: 0xFFD9A0, transparent: true, opacity: .45, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false })); pool.rotation.x = -Math.PI / 2; pool.position.set(2.0, .02, 0); g.add(pool);
+  const tail = glow(0xFF3B30, .5, .9); tail.position.set(-.79, .75, 0); body.add(tail);
+  blobT ||= canvasTex(128, 64, (c, w, h) => { const r = c.createRadialGradient(64, 32, 2, 64, 32, 60); r.addColorStop(0, 'rgba(0,0,0,.7)'); r.addColorStop(1, 'rgba(0,0,0,0)'); c.setTransform(1, 0, 0, .5, 0, 16); c.fillStyle = r; c.fillRect(0, 0, w, h * 2); });
+  const blob = new THREE.Mesh(new THREE.PlaneGeometry(1.8, .7), new THREE.MeshBasicMaterial({ map: blobT, transparent: true, depthWrite: false })); blob.rotation.x = -Math.PI / 2; blob.position.y = .015; g.add(blob);
+  g.scale.setScalar(1.15); g.visible = false; scene.add(g);
+  return { g, body, sc, man, load, busy: false, t0: 0, ph: 0, tl: null };
+}
+function puff(r) { const s = puffs.shift(); puffs.push(s); const p = r.g.localToWorld(V3(-.85, .35, .12)); s.position.copy(p); gsap.killTweensOf(s.material); gsap.killTweensOf(s.scale); gsap.killTweensOf(s.position);
+  s.scale.setScalar(.25); s.material.opacity = .5; gsap.to(s.scale, { x: 1, y: 1, duration: 1.1, ease: 'power1.out' }); gsap.to(s.position, { y: p.y + .45, x: p.x + .4, duration: 1.1 }); gsap.to(s.material, { opacity: 0, duration: 1.1, ease: 'power1.in' }); }
+/* a rider leaves: pulls out from the kerb by the door, leans into the lane, rides off left across the window */
+export function rideOut(n = 1) {
+  if (!rides.length) return;
+  const r = rides.find(x => !x.busy) || rides.reduce((a, b) => (a.t0 < b.t0 ? a : b)); if (r.tl) r.tl.kill();
+  r.busy = true; r.t0 = performance.now(); r.ph = Math.random() * 6; r.load.children.forEach((b, i) => { b.visible = i < Math.min(3, Math.max(1, n)); });
+  const st = { u: 0 }, zc = ROAD.curb - .5; let px = ROAD.x0 + .01, pz = zc;
+  const place = () => { const u = st.u, x = ROAD.x0 + (ROAD.x1 - ROAD.x0) * u, s = Math.min(1, u / .22), e = s * s * (3 - 2 * s), z = zc + (ROAD.z - zc) * e;
+    const dx = x - px, dz = z - pz; if (dx * dx + dz * dz > 1e-8) { const dev = Math.atan2(-dz, -dx); r.g.rotation.y = Math.PI - dev; r.body.rotation.x = dev * .8; }
+    r.g.position.set(x, ROAD.y, z); px = x; pz = z; };
+  r.g.visible = true; place();
+  r.tl = gsap.timeline({ onComplete: () => { r.busy = false; r.g.visible = false; } })
+    .to(st, { u: 1, duration: 4.4, ease: 'power1.in', onUpdate: place }, 0)
+    .fromTo(r.body.rotation, { z: 0 }, { z: .045, duration: .5, ease: 'power2.out', yoyo: true, repeat: 1 }, .9)
+    .call(() => puff(r), null, 1.0).call(() => puff(r), null, 1.3).call(() => puff(r), null, 1.65);
+}
+
+/* ---------- close-ups: a second small camera on the station that is working (picture-in-picture, same renderer) ---------- */
+const CU = {};
+function initCloseups() {
+  for (const key of ['prep', 'cook']) { const el = document.createElement('div'); el.className = 'closeup'; el.style.display = 'none'; (document.getElementById('dim') || document.body).after(el);
+    CU[key] = { key, el, cam: new THREE.PerspectiveCamera(32, 1.7, .05, 40), k: 0, open: false, hideAt: 0, rect: null, pos: V3(0, 0, 0), look: V3(0, 0, 0), cp: V3(0, 0, 0), cl: V3(0, 0, 0), tw: null }; }
+  buildSpatter();
+}
+export function closeUp(key, i = 0, hold = 1700) {
+  const c = CU[key]; if (!c || quality < .6) return;
+  const z = document.getElementById('z-' + key), app = document.getElementById('app'); if (!z || !app || z.closest('.hide')) return;
+  if (key === 'prep') { c.look.set(STX.prep + .02, 1.62, .95); c.pos.set(STX.prep + 1.0, 2.3, 2.75); }
+  else { const bx = STX.cook + [-1.15, 0, 1.15][Math.min(i, 2)]; c.look.set(bx, 1.68, 1.05); c.pos.set(bx + .6, 2.08, 2.95); }
+  c.hideAt = performance.now() + hold;
+  if (!c.open) { const a = app.getBoundingClientRect(), r = z.getBoundingClientRect(), s = a.width / 1920 || 1, w = r.width / s - 28, h = Math.round(w * .56);
+    c.rect = { x: (r.left - a.left) / s + 14, y: (r.top - a.top) / s - 16 - h, w, h }; c.cp.copy(c.pos); c.cl.copy(c.look);
+    c.open = true; c.el.style.display = ''; if (c.tw) c.tw.kill(); c.tw = gsap.to(c, { k: 1, duration: .32, ease: 'back.out(1.5)' }); }
+}
+function closeupPass() {
+  const now = performance.now();
+  for (const key in CU) { const c = CU[key];
+    if (c.open && now > c.hideAt) { c.open = false; if (c.tw) c.tw.kill(); c.tw = gsap.to(c, { k: 0, duration: .22, ease: 'power2.in', onComplete: () => { c.el.style.display = 'none'; } }); }
+    if (c.k < .01 || !c.rect) continue;
+    const R0 = c.rect, s = .55 + .45 * c.k, w = Math.round(R0.w * s), h = Math.round(R0.h * s), x = Math.round(R0.x + (R0.w - w) / 2), y = Math.round(R0.y + R0.h - h);
+    Object.assign(c.el.style, { left: x - 8 + 'px', top: y - 8 + 'px', width: w + 'px', height: h + 'px', opacity: Math.min(1, c.k * 1.6) });
+    c.cp.lerp(c.pos, .15); c.cl.lerp(c.look, .15);
+    c.cam.position.set(c.cp.x + Math.sin(U.t * .7) * .03, c.cp.y + Math.sin(U.t * 1.1) * .015, c.cp.z); c.cam.lookAt(c.cl); c.cam.aspect = w / h; c.cam.updateProjectionMatrix();
+    const au = R.shadowMap.autoUpdate; R.shadowMap.autoUpdate = false;
+    R.setScissorTest(true); R.setViewport(x, 1200 - y - h, w, h); R.setScissor(x, 1200 - y - h, w, h); R.render(scene, c.cam);
+    R.setScissorTest(false); R.setViewport(0, 0, 1920, 1200); R.shadowMap.autoUpdate = au; }
+}
 
 
 /* ================= cinematic intro: night sky → street → shop window → kitchen =================

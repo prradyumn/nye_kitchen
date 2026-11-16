@@ -306,3 +306,12 @@ body:not(.playing) #clock .cd{display:none}               /* "to midnight" count
 .ctag.side-r::after,.ctag.side-l::after{left:auto;right:auto;bottom:auto;top:50%;margin:-14px 0 0;border:14px solid transparent}
 .ctag.side-r::after{left:-14px;border-left:0;border-right-color:var(--sk-lightgold)}
 .ctag.side-l::after{right:-14px;border-right:0;border-left-color:var(--sk-lightgold)}
+/* message builder rows have no label column any more: one centred row of wordings */
+.frow{grid-template-columns:1fr}
+.frow .opts{justify-content:center}
+/* facilitator menu: not shown to children; the hotspot stays in the same corner (see README) */
+#menuBtn{opacity:0}
+#menuBtn:focus-visible{opacity:1}
+
+/* 3D close-up (picture-in-picture over the working station; the 3D shows through the empty middle) */
+.closeup{position:absolute;box-sizing:content-box;border:8px solid var(--sk-cream,#F6F0DF);border-radius:14px;box-shadow:0 12px 26px rgba(7,19,66,.45),inset 0 0 0 2px rgba(7,19,66,.25);pointer-events:none}

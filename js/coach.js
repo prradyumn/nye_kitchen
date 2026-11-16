@@ -100,8 +100,7 @@ export async function stageIntro(i) {
   stageI = i; rail(i); unguide();
   const s = STEPS[i];
   const el = h('div', { id: 'intro' }, h('div', { class: 'icard glass' },
-    img(s.icon, 'ic'), h('div', { class: 'eyebrow' }, `Step ${i + 1} of ${STEPS.length}`), h('div', { class: 'h2' }, s.t), h('div', { class: 'sub' }, s.goal),
-    h('div', { class: 'tapon' }, 'tap to start')));
+    img(s.icon, 'ic'), h('div', { class: 'eyebrow' }, `Step ${i + 1} of ${STEPS.length}`), h('div', { class: 'h2' }, s.t), h('div', { class: 'sub' }, s.goal)));
   $('#app').append(el); sfx.chime();
   gsap.from(el.firstChild, { y: 40, scale: .9, opacity: 0, duration: .45, ease: 'back.out(1.7)' });
   await new Promise(res => { const t = setTimeout(res, 3800); tap(el, () => { clearTimeout(t); res(); }); });

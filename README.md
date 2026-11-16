@@ -60,6 +60,11 @@ New evidence events: `hint_shown {stage, hint}` (once per hint per stage), `hint
 ## Opening cinematic
 Tap to start (this also turns on sound and voice), then a ~15 s letterboxed fly-in: night sky and moon → the city → the shop front ("MEHER'S KITCHEN" neon, awning, string lights) → through the window into the kitchen as the lamps come on. It is built entirely in three.js code (no new assets, about 20 KB), played once, then disposed. Skip button bottom-right; `?nointro=1` skips it; `?stage=N` never plays it.
 
+## Live 3D action during shifts
+- **Riders leave on scooters.** Each Send puts a helmeted rider on the Blender scooter in the street outside the back window. They pull out from the kerb by the door, lean into the lane and ride off left, with headlight beam, light on the road, tail-light and exhaust puffs. The crate carries one box per order in the batch (up to 3). Up to 3 rides can be on screen at once.
+- **Close-ups.** Chopping or starting or finishing a dish pops a small framed close-up above that station, drawn by a second camera on the same renderer. It closes about 1.5 s after the last action. Chopping: the knife stands on its edge and rocks down, and each stroke drops a Blender cucumber slice and a few bits. Cooking: blue gas flames with warm tips, oil sizzle, the karahi tosses its paneer, and the pot lid rattles.
+- All of it is procedural code on the existing props (about 18 KB of code, no new files). Close-ups are skipped when the adaptive quality drops (`?q=low`). Burnt food still shows smoke only.
+
 ## Learning design (round 3)
 - **Mission card** after stations: the problem statement in kid words and the three things the team will do.
 - **Blank bar**: every part of the bar starts empty, so nothing is pre-filled to copy (Steps 3 and 7).
@@ -87,3 +92,10 @@ Visual layer from Figma *SKAI-final › Entrepreneur* (chrome 618:12456, Cards 6
 - **Cards** are pinned paper on Blue / Yellow / Pink / Green backings. `ui.js decorate()` adds the backing, paper and pin to every `.card` automatically.
 - **Buttons** are the riveted Terracotta "Investigate" style; secondary buttons use Royal Blue.
 - New events: `hint_requested`, `narration_replay`, `exit_mission`.
+
+
+## Decluttered UI
+
+Every screen shows only what the child needs for the current decision: one read-aloud button per heading, no "Step N" eyebrows (the progress rail already shows it), no empty-state placeholder text, evidence shown on the screen where it is used (Step 5 evidence sits beside "why did it fail?" instead of beside Pass/Fail), grouped duplicate reviews ("took over 30 minutes ×5"), one fill bar per Pass/Fail line, tickets show number + area only (every order has the same menu), and idle-nudge labels placed beside their target. Game logic, evidence events and the learning flow are unchanged.
+
+**Facilitator menu:** the ☰ button is invisible to children. Tap the spot just below the clock (top-right) to open it.

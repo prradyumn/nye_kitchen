@@ -111,7 +111,7 @@ export function say(who, text, o = {}) {
   const box = $('#talk'); gsap.killTweensOf(box); box.style.opacity = ''; box.innerHTML = ''; box.classList.remove('hide', 'quiet'); box.classList.toggle('top', !!o.top); box.classList.toggle('nonext', !!o.noNext);
   const who_ = h('div', { class: 'who' }), spr = h('div', { class: 'spr' }); who_.append(spr);
   const tx = h('div', { class: 'tx' }), nx = h('button', { class: 'nx' }, o.button || 'Next ›');
-  const bub = h('div', { class: 'bub' }, h('div', { class: 'n' }, CH[who].name, h('span', { class: 'wave' }, h('i'), h('i'), h('i'), h('i'))), tx, o.noNext ? null : nx);
+  const bub = h('div', { class: 'bub' }, h('div', { class: 'n' }, CH[who].name), tx, o.noNext ? null : nx);
   box.append(who_, bub);
   if (talkSprite) removeSprite(talkSprite);
   talkSprite = addSprite(new Sprite(spr, `char_${who}_talk`, { fps: 7, height: 290 }));

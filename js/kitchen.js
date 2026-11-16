@@ -141,8 +141,8 @@ function deliver(o, at, travel) {
 }
 export function postReview(r) {
   const box = $('#reviews'); if (!box) return;
-  const el = h('div', { class: 'rv' }, img(r.emoji), h('div', {}, r.text, h('small', {}, `#${r.no} · ${r.pickup ? 'pickup' : AREAS[r.area].name}${r.desai ? ' · Desai family' : ''}`)));
-  box.prepend(el); while (box.children.length > 5) box.lastChild.remove();
+  const el = h('div', { class: 'rv' }, img(r.emoji), h('div', {}, r.text, r.desai ? h('small', {}, 'Desai family') : null));
+  box.prepend(el); while (box.children.length > 3) box.lastChild.remove();   // newest 3 only
   gsap.from(el, { x: 80, opacity: 0, duration: .45, ease: 'back.out(1.7)' });
   const [x, y] = centerOf(el); fx('fx_pop', x - 175, y, { size: 80, fps: 12 }); sfx.pop();
 }
@@ -154,7 +154,7 @@ function send(orders) {
   S.riders.free--; orders.forEach((o, i) => { o.stage = 'out'; o.t.depart = S.t; o.t.arrive = S.t + AREAS[area].min + i * 3; });
   S.riders.out.push({ orders, travel, back: S.t + travel * 2 - (orders.length - 1) * 3 });
   L('dispatch', { shift: S.cfg.shift, orders: orders.map(o => o.no), area, batch: orders.length });
-  sfx.whoosh(); updateRidersHud(); K3.setRiders(S.riders.free, S.riders.total);
+  sfx.whoosh(); updateRidersHud(); K3.setRiders(S.riders.free, S.riders.total); K3.rideOut(orders.length);
   S.sel.clear(); S.zonesDirty.disp = 1;
 }
 export function updateRidersHud() {
@@ -218,7 +218,7 @@ function zPrep(body) {
   const board = h('button', { class: 'board act' }, dots, veg, h('div', { class: 'tap' }, o.remade ? 'Remake! Tap to chop' : 'Tap to chop'));
   tap(board, () => {
     if (o.stage !== 'prep') return;
-    o.chops++; act('prep'); sfx.clack(); K3.chop(); gsap.fromTo(veg, { scale: .82, rotate: -8 }, { scale: 1, rotate: 0, duration: .25, ease: 'back.out(3)' });
+    o.chops++; act('prep'); sfx.clack(); K3.chop(); K3.closeUp('prep'); gsap.fromTo(veg, { scale: .82, rotate: -8 }, { scale: 1, rotate: 0, duration: .25, ease: 'back.out(3)' });
     const [x, y] = centerOf(board); fx('fx_sparkle', x + (Math.random() - .5) * 120, y - 40, { size: 90, fps: 14 });
     [...dots.children].forEach((d, i) => d.classList.toggle('on', i < o.chops));
     if (o.chops >= need) { o.stage = 'cook'; o.t.cookIn = S.t; (o.waits ||= {}).prep = S.t - o.t.created; flyImg(DISHES[o.items[0]].img, board, '#z-cook', { size: 90 }); S.zonesDirty.prep = S.zonesDirty.cook = 1; }
@@ -238,12 +238,12 @@ function zCook(body) {
     grid.append(el);
   }
   const wait = q('cook');
-  body.append(grid, h('div', { class: 'tray' }, wait.length ? h('div', { class: 't' }, 'READY TO COOK · tap a burner') : null, minis(wait)));
+  body.append(grid, h('div', { class: 'tray' }, wait.length ? h('div', { class: 't' }, 'Tap a burner') : null, minis(wait)));
 }
 function tapBurner(i, el) {
   const b = S.burners[i];
-  if (!b.order) { const o = q('cook')[0]; if (!o) return; act('cook'); o.stage = 'cooking'; b.order = o; b.state = 'cook'; b.start = S.t; o.t.cookStart = S.t; (o.waits ||= {}).cookQ = S.t - o.t.cookIn; sfx.select(); K3.rattleLid(); fxAt('fx_sizzle', el, { size: 120, fps: 10, loops: 2 }); S.zonesDirty.cook = 1; return; }
-  if (b.state === 'done' && b.order) { act('cook'); const o = b.order; o.stage = 'pack'; o.t.packIn = S.t; (o.waits ||= {}).cook = S.t - (o.t.cookIn ?? S.t); b.order = null; b.state = 'off'; sfx.coin(); fxAt('fx_sparkle', el, { size: 160 }); flyImg(DISHES[o.items[0]].img, el, '#z-pack', { size: 90 }); K3.setBurner(i, 'off'); S.zonesDirty.cook = S.zonesDirty.pack = 1; }
+  if (!b.order) { const o = q('cook')[0]; if (!o) return; act('cook'); o.stage = 'cooking'; b.order = o; b.state = 'cook'; b.start = S.t; o.t.cookStart = S.t; (o.waits ||= {}).cookQ = S.t - o.t.cookIn; sfx.select(); K3.toss(i); K3.closeUp('cook', i); fxAt('fx_sizzle', el, { size: 120, fps: 10, loops: 2 }); S.zonesDirty.cook = 1; return; }
+  if (b.state === 'done' && b.order) { act('cook'); const o = b.order; o.stage = 'pack'; o.t.packIn = S.t; (o.waits ||= {}).cook = S.t - (o.t.cookIn ?? S.t); b.order = null; b.state = 'off'; sfx.coin(); K3.toss(i); K3.closeUp('cook', i, 1300); fxAt('fx_sparkle', el, { size: 160 }); flyImg(DISHES[o.items[0]].img, el, '#z-pack', { size: 90 }); K3.setBurner(i, 'off'); S.zonesDirty.cook = S.zonesDirty.pack = 1; }
 }
 function zPack(body) {
   const list = q('pack');
@@ -265,7 +265,7 @@ function zPack(body) {
 function zDisp(body) {
   const list = q('disp'); const R = S.riders; const batch = !!S.cfg.batch; const cap = PACKS[G.pack].cap;
   const showInfo = S.cfg.shift === 1 || true; // Dispatch always sees the rider picture
-  body.append(h('div', { class: 'dinfo' }, h('span', {}, 'Near 8 min'), h('span', {}, 'Mid 15 min'), h('span', {}, 'Far 24 min')));
+  body.append(h('div', { class: 'dinfo' }, h('span', {}, 'Trip: near 8 · mid 15 · far 24 min')));
   if (!list.length) { body.append(h('div', { class: 'empty' }, h('div', {}, img('ico_rider', 'wm')))); return; }
   const dl = h('div', { class: 'dlist' });
   list.slice(0, 4).forEach(o => {
@@ -280,7 +280,7 @@ function zDisp(body) {
   });
   body.append(dl);
   if (list.length > 4) body.append(h('div', { class: 'tm', style: { font: '800 18px Nunito', color: '#A9AED6' } }, `+${list.length - 4} more at the door`));
-  if (batch) body.append(h('div', { class: 'bhint' }, `Batching: tap up to ${cap} boxes for the same area, then Send.`));
+  if (batch) body.append(h('div', { class: 'bhint' }, `Tap up to ${cap} boxes for one area, then Send.`));
 }
 // live station nudges: how to work YOUR station, shown when it has work and nobody has tapped for a while.
 // They never mention HELP (help jumps must stay unprompted).
@@ -319,7 +319,7 @@ function updateLive() {
     el.setAttribute('stroke-dasharray', `${f * C} ${C}`); el.setAttribute('stroke', col); });
 }
 function renderTickets() {
-  const t = $('#tickets'); const live = S.orders.filter(o => o.stage !== 'done').slice(0, 11);
+  const t = $('#tickets'); const live = S.orders.filter(o => o.stage !== 'done').slice(0, 6);
   const key = live.map(o => o.no + o.stage).join(',');
   if (t.dataset.k !== key) { t.dataset.k = key; t.innerHTML = '';
     live.forEach(o => t.append(h('div', { class: 'tk', 'data-no': o.no }, o.desai ? img('anya_phone', 'av') : null, h('b', {}, `#${o.no}`), areaTag(o), h('div', { class: 'w' }, h('i'))))); }
