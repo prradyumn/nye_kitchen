@@ -247,14 +247,32 @@ export function burstFirework(x = (Math.random() - .5) * 12, y = 4.5 + Math.rand
 const CAMS = {
   dark: { p: [0, 3.6, 8.5], t: [0, 3.2, -1], fov: 30 },
   wide: { p: [0, 5.4, 22.5], t: [0, 3.5, 0], fov: 30 },
-  play: { p: [0, 7.0, 22.5], t: [0, 1.65, 0], fov: 30 },
+  play: { p: [0, 14.24, 18.46], t: [0, .42, 1.99], fov: 30 },   // tabletop view: stations sit right above their panels
   disp: { p: [6.5, 4.2, 12], t: [7.5, 2.6, -1], fov: 30 },
   window: { p: [0, 4.4, 15], t: [0, 5.4, -4], fov: 34 },
   plan: { p: [-1.2, 5.6, 21], t: [0, 4.0, 0], fov: 30 },
 };
 const camT = new THREE.Vector3();
+/* shifts show only the counter: a plain backdrop just behind it hides the room (wall, window, shelves, rails, door, sign),
+   and the room is switched off underneath so the K11 draws less. Riders leaving are shown in a close-up instead. */
+let backdrop = null, decor = null, inPlay = false;
+function buildBackdrop() {
+  // y -1..13 at z -.7; from the play camera only y ~1.4 (the counter's back edge) to ~5.5 shows, i.e. canvas rows .54-.83
+  const t = canvasTex(256, 512, (g, w, h) => { const v = g.createLinearGradient(0, 0, 0, h); v.addColorStop(0, '#071342'); v.addColorStop(.5, '#071342'); v.addColorStop(.84, '#14317A'); v.addColorStop(1, '#14317A'); g.fillStyle = v; g.fillRect(0, 0, w, h);
+    g.save(); g.translate(w / 2, h * .85); g.scale(1, .22); const r = g.createRadialGradient(0, 0, 0, 0, 0, w * .75); r.addColorStop(0, 'rgba(253,210,95,.16)'); r.addColorStop(1, 'rgba(253,210,95,0)'); g.fillStyle = r; g.fillRect(-w, -w, 2 * w, 2 * w); g.restore(); });
+  backdrop = new THREE.Mesh(new THREE.PlaneGeometry(44, 14), new THREE.MeshBasicMaterial({ map: t, transparent: true, opacity: 0, fog: false, toneMapped: false }));
+  backdrop.position.set(0, 6, -.7); backdrop.visible = false; backdrop.renderOrder = -1; scene.add(backdrop);
+}
+function playMode(on, dur = 1) {
+  if (on === inPlay) return; inPlay = on; if (!backdrop) buildBackdrop();
+  const keep = new Set([backdrop, parts.sky, parts.street, ...scooters, ...rides.map(r => r.g), ...puffs, fw && fw.pts, intro && intro.g]);   // the street + skyline stay for the rider close-up
+  if (!decor || !props) decor = scene.children.filter(o => !keep.has(o) && o.position.z < -1 && !o.isLight);
+  const m = backdrop.material; gsap.killTweensOf(m);
+  if (on) { backdrop.visible = true; gsap.to(m, { opacity: 1, duration: Math.max(.01, dur * .6), ease: 'power1.inOut', onComplete: () => { if (inPlay) decor.forEach(o => { o.visible = false; }); } }); }
+  else { decor.forEach(o => { o.visible = true; }); gsap.to(m, { opacity: 0, duration: Math.max(.01, dur * .6), ease: 'power1.inOut', onComplete: () => { if (!inPlay) backdrop.visible = false; } }); }
+}
 export function setCam(name, dur = 1.6, ease = 'power3.inOut') {
-  const c = CAMS[name]; if (!c) return; gsap.killTweensOf(cam.position); gsap.killTweensOf(camT); gsap.killTweensOf(cam);
+  const c = CAMS[name]; if (!c) return; playMode(name === 'play', dur); gsap.killTweensOf(cam.position); gsap.killTweensOf(camT); gsap.killTweensOf(cam);
   if (!dur) { cam.position.set(...c.p); camT.set(...c.t); cam.fov = c.fov; cam.updateProjectionMatrix(); return; }
   gsap.to(cam.position, { x: c.p[0], y: c.p[1], z: c.p[2], duration: dur, ease });
   gsap.to(camT, { x: c.t[0], y: c.t[1], z: c.t[2], duration: dur, ease });
@@ -341,7 +359,7 @@ export async function loadProps() {
   bulbs.forEach(b => { const g = glow(b.material.color.getHex(), .55, 0); b.add(g); b.userData.gl = g; });
   parts.signGlow = glow(0xFF6A50, 3.2, 0); parts.signGlow.position.copy(openSign.position); parts.signGlow.position.z += .1; scene.add(parts.signGlow);
   props = true;
-  if (/test=1/.test(location.search)) window.__k3 = { parts, scene };   // test hook
+  if (/test=1/.test(location.search)) window.__k3 = { parts, scene, CAMS, setCam, rides, setQ: v => { quality = v; } };   // test hook
 }
 let props = false;
 
@@ -467,12 +485,13 @@ export function rideOut(n = 1) {
     .to(st, { u: 1, duration: 4.4, ease: 'power1.in', onUpdate: place }, 0)
     .fromTo(r.body.rotation, { z: 0 }, { z: .045, duration: .5, ease: 'power2.out', yoyo: true, repeat: 1 }, .9)
     .call(() => puff(r), null, 1.0).call(() => puff(r), null, 1.3).call(() => puff(r), null, 1.65);
+  if (inPlay) closeUp('disp', r, 3200);   // the street is behind the backdrop during shifts, so show the ride in a close-up
 }
 
 /* ---------- close-ups: a second small camera on the station that is working (picture-in-picture, same renderer) ---------- */
 const CU = {};
 function initCloseups() {
-  for (const key of ['prep', 'cook']) { const el = document.createElement('div'); el.className = 'closeup'; el.style.display = 'none'; (document.getElementById('dim') || document.body).after(el);
+  for (const key of ['prep', 'cook', 'disp']) { const el = document.createElement('div'); el.className = 'closeup'; el.style.display = 'none'; (document.getElementById('dim') || document.body).after(el);
     CU[key] = { key, el, cam: new THREE.PerspectiveCamera(32, 1.7, .05, 40), k: 0, open: false, hideAt: 0, rect: null, pos: V3(0, 0, 0), look: V3(0, 0, 0), cp: V3(0, 0, 0), cl: V3(0, 0, 0), tw: null }; }
   buildSpatter();
 }
@@ -480,11 +499,15 @@ export function closeUp(key, i = 0, hold = 1700) {
   const c = CU[key]; if (!c || quality < .6) return;
   const z = document.getElementById('z-' + key), app = document.getElementById('app'); if (!z || !app || z.closest('.hide')) return;
   if (key === 'prep') { c.look.set(STX.prep - .12, 1.6, .95); c.pos.set(STX.prep - .75, 2.3, 2.8); }
-  else { const bx = STX.cook + [-1.15, 0, 1.15][Math.min(i, 2)]; c.look.set(bx, 1.68, 1.05); c.pos.set(bx + .6, 2.08, 2.95); }
+  else if (key === 'cook') { const bx = STX.cook + [-1.15, 0, 1.15][Math.min(i, 2)]; c.look.set(bx, 1.68, 1.05); c.pos.set(bx + .6, 2.08, 2.95); }
+  else { c.follow = i; streetCam(c); }   // disp: follow the rider who just left (i = the ride)
   c.hideAt = performance.now() + hold;
   if (!c.open) { const a = app.getBoundingClientRect(), r = z.getBoundingClientRect(), s = a.width / 1920 || 1, w = r.width / s - 28, h = Math.round(w * .56);
     c.rect = { x: (r.left - a.left) / s + 14, y: (r.top - a.top) / s - 16 - h, w, h }; c.cp.copy(c.pos); c.cl.copy(c.look);
     c.open = true; c.el.style.display = ''; if (c.tw) c.tw.kill(); c.tw = gsap.to(c, { k: 1, duration: .32, ease: 'back.out(1.5)' }); }
+}
+function streetCam(c) {   // a camera walking alongside the scooter on the street, a little ahead of it
+  const p = c.follow.g.position; c.look.set(p.x - .5, ROAD.y + .85, p.z); c.pos.set(p.x + 1.3, ROAD.y + 1.75, p.z + 4.4);
 }
 function closeupPass() {
   const now = performance.now();
@@ -493,6 +516,7 @@ function closeupPass() {
     if (c.k < .01 || !c.rect) continue;
     const R0 = c.rect, s = .55 + .45 * c.k, w = Math.round(R0.w * s), h = Math.round(R0.h * s), x = Math.round(R0.x + (R0.w - w) / 2), y = Math.round(R0.y + R0.h - h);
     Object.assign(c.el.style, { left: x - 8 + 'px', top: y - 8 + 'px', width: w + 'px', height: h + 'px', opacity: Math.min(1, c.k * 1.6) });
+    if (c.follow) streetCam(c);
     c.cp.lerp(c.pos, .15); c.cl.lerp(c.look, .15);
     c.cam.position.set(c.cp.x + Math.sin(U.t * .7) * .03, c.cp.y + Math.sin(U.t * 1.1) * .015, c.cp.z); c.cam.lookAt(c.cl); c.cam.aspect = w / h; c.cam.updateProjectionMatrix();
     const au = R.shadowMap.autoUpdate; R.shadowMap.autoUpdate = false;
