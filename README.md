@@ -99,3 +99,14 @@ Visual layer from Figma *SKAI-final › Entrepreneur* (chrome 618:12456, Cards 6
 Every screen shows only what the child needs for the current decision: one read-aloud button per heading, no "Step N" eyebrows (the progress rail already shows it), no empty-state placeholder text, evidence shown on the screen where it is used (Step 5 evidence sits beside "why did it fail?" instead of beside Pass/Fail), grouped duplicate reviews ("took over 30 minutes ×5"), one fill bar per Pass/Fail line, tickets show number + area only (every order has the same menu), and idle-nudge labels placed beside their target. Game logic, evidence events and the learning flow are unchanged.
 
 **Facilitator menu:** the ☰ button is invisible to children. Tap the spot just below the clock (top-right) to open it.
+
+## Recorded voices (ElevenLabs)
+- Meher Didi and every 🔊 read-aloud use **Anamika**; Kabir uses **Vishal**. Both come from the SKAI voice library, Grade 3 to 5 set (the players are in Grade 5), recorded with Multilingual v2.
+- 119 clips in `assets/voice/` (Ogg Opus, mono, 24 kbps, about 1.4 MB in total; browsers that cannot play Ogg use the browser voice), listed in `assets/voice/index.json`. The game finds a clip by its text (`vkey()` in js/ui.js).
+- Headings that change with play are recorded in pieces ("10 boxes delivered.", each bar line, each "On time within N min") and played in order, so the voice never switches mid-line. Any line without a clip falls back to the browser's speech. Next, Mute and Replay narration work as before.
+- After changing any spoken text, add it to `tools/voice_lines.json` and run `XI_API_KEY=… python3 tools/voice_gen.py`. It records only the missing clips and removes unused ones. The API key is never stored in the project.
+
+## Download size (optimised)
+- `assets/models/props.glb` is meshopt-compressed (866 → 343 KB) and decoded by `js/vendor/meshopt_decoder.module.js`. After regenerating it with `tools/blender_props.py`, compress it again: `npx @gltf-transform/cli dedup props.glb a.glb && npx @gltf-transform/cli meshopt a.glb props.glb`. Node names stay the same, which the code relies on.
+- `js/vendor/three.module.min.js` is three.js r165 trimmed to the 90 classes the game uses (678 → 520 KB). If you start using a new `THREE.X`, rebuild it: `cd /tmp && npm i three@0.165.0 esbuild && node <project>/tools/build_three.mjs <project>`.
+- Voice clips are Ogg Opus. Every picture is WebP; the SKAI frame pieces stay SVG because they are vector drawings, which are smaller and stay sharp at any scale.

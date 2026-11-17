@@ -94,13 +94,33 @@ export function flyImg(key, from, to, { size = 80, dur = .6 } = {}) {
 const CH = { meher: { name: 'Meher Didi', still: 'meher_warm' }, kabir: { name: 'Kabir · rider captain', still: 'kabir_radio' }, anya: { name: 'Anya · Desai family', still: 'anya_phone' } };
 let voiceOn = true, talkSprite = null, lastSay = null;
 export function replayNarration() { if (lastSay) speak(lastSay.text, lastSay.who); return !!lastSay; }
-export function setVoice(v) { voiceOn = v; if (!v && 'speechSynthesis' in window) speechSynthesis.cancel(); }
+export function setVoice(v) { voiceOn = v; if (!v) stopVoice(); }
 export function readAloud(text) { return speak(text, 'meher'); }
+/* Recorded voices (ElevenLabs, Multilingual v2; Meher = Anamika, Kabir = Vishal) live in assets/voice/<key>.ogg,
+   listed in assets/voice/index.json. Lines with no clip fall back to the browser's speech. tools/voice_gen.py makes them. */
+let VO = {}, vAudio = null;
+const OGG = (() => { try { return new Audio().canPlayType('audio/ogg; codecs="opus"') !== ''; } catch (e) { return false; } })();   // clips are Ogg Opus
+if (OGG) fetch('assets/voice/index.json').then(r => (r.ok ? r.json() : {})).then(j => { VO = j || {}; }).catch(() => { });
+export function vkey(text) { const s = text.replace(/[“”"‘’'.,?!:;·=]/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase(); let x = 0x811c9dc5; for (let i = 0; i < s.length; i++) { x ^= s.charCodeAt(i); x = Math.imul(x, 0x01000193) >>> 0; } return x.toString(36); }
+export function stopVoice() { if (vAudio) { vAudio.pause(); vAudio = null; } if ('speechSynthesis' in window) speechSynthesis.cancel(); }
 function speak(text, who) {
-  if (!voiceOn || !('speechSynthesis' in window)) return null;
+  if (!voiceOn) return null;
+  stopVoice(); const clean = text.replace(/[“”"]/g, ''), f = VO[vkey(clean)];
+  if (f) return playClips([f], clean, who);
+  // a heading that changes with play: say it piece by piece if every piece was recorded (one voice, never mixed)
+  const parts = clean.split(/(?<=[.?!:])\s+|\s+·\s+/).map(x => x.trim()).filter(x => /\w/.test(x)), fs = parts.map(x => VO[vkey(x)]);
+  if (parts.length > 1 && fs.every(Boolean)) return playClips(fs, clean, who);
+  return tts(clean, who);
+}
+function playClips(files, text, who) {
+  let i = 0, a = null; const next = () => { if (i >= files.length) { if (vAudio === a) vAudio = null; return; } a = new Audio('assets/voice/' + files[i++]); vAudio = a; const me = a;
+    me.onended = () => { if (vAudio === me) next(); }; me.play().catch(() => { if (vAudio === me) { vAudio = null; if (i === 1) tts(text, who); } }); };
+  next(); return a;
+}
+function tts(text, who) {
+  if (!('speechSynthesis' in window)) return null;
   try {
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text.replace(/[“”"]/g, ''));
+    const u = new SpeechSynthesisUtterance(text);
     const vs = speechSynthesis.getVoices(); const v = vs.find(v => /en-IN/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang));
     if (v) u.voice = v; u.lang = v ? v.lang : 'en-IN'; u.rate = 1.0; u.pitch = who === 'anya' ? 1.35 : who === 'kabir' ? .9 : 1.08;
     speechSynthesis.speak(u); return u;
@@ -127,7 +147,7 @@ export function say(who, text, o = {}) {
   return new Promise(res => {
     if (o.noNext) { setTimeout(() => res(() => hideTalk()), Math.max(1800, words.length * 260)); return; }
     nx.classList.add('hide'); setTimeout(() => { nx.classList.remove('hide'); gsap.from(nx, { scale: .6, opacity: 0, duration: .3, ease: 'back.out(2)' }); }, Math.min(2200, words.length * 170 + 300));
-    tap(nx, () => { gsap.killTweensOf(tx.querySelectorAll('.w')); gsap.set(tx.querySelectorAll('.w'), { clearProps: 'all' }); sfx.select(); if ('speechSynthesis' in window) speechSynthesis.cancel(); hideTalk(); res(); });
+    tap(nx, () => { gsap.killTweensOf(tx.querySelectorAll('.w')); gsap.set(tx.querySelectorAll('.w'), { clearProps: 'all' }); sfx.select(); stopVoice(); hideTalk(); res(); });
     if (o.auto) setTimeout(() => { if (box.contains(nx)) { hideTalk(); res(); } }, o.auto);
   });
 }

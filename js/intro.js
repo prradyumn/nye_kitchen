@@ -11,7 +11,7 @@ export async function playIntro() {
   const top = h('div', { class: 'lb top' }), bot = h('div', { class: 'lb bot' });
   const cap = h('div', { class: 'cap' }), skip = h('button', { class: 'skip' }, 'Skip ›');
   // SKAI title screen: the mission name and one Start button, nothing else
-  const gate = h('button', { class: 'gate', 'aria-label': 'Start mission' }, img('title', 'gt'), h('b', {}, 'Start mission'));
+  const gate = h('button', { class: 'gate', 'aria-label': 'Let’s investigate' }, img('title', 'gt'), h('b', { class: 'btn start pulse' }, 'Let’s investigate'));
   const el = h('div', { id: 'cine' }, top, bot, cap, skip, gate);
   $('#app').append(el);
   gsap.from(gate, { opacity: 0, y: 30, duration: .8, delay: .3 });

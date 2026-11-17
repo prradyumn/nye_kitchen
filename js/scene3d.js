@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from './vendor/RoundedBoxGeometry.js';
 import { MANIFEST } from './manifest.js';
 import { GLTFLoader } from './vendor/GLTFLoader.js';
+import { MeshoptDecoder } from './vendor/meshopt_decoder.module.js';
 import { RoomEnvironment } from './vendor/RoomEnvironment.js';
 
 const C = { night: 0x14162E, wall: 0x2A2F66, wall2: 0x22265A, tile: 0x31376F, cream: 0xFFF2DC, ink: 0x23284A, saffron: 0xF4A51C, gold: 0xFFD166, tomato: 0xE8503A, teal: 0x1FA898, sky: 0x7FB8F0, green: 0x8BC34A, pink: 0xF28DB2, wood: 0xC8955E, steel: 0x8C93B8 };
@@ -231,8 +232,9 @@ export function setStacks(pack, disp) {
 }
 export function setRiders(free, total) { scooters.forEach((s, i) => { const vis = i < Math.round(free / Math.max(1, total) * 6); if (s.visible !== vis) { if (!vis) { gsap.to(s.position, { x: s.position.x + 6, duration: .9, ease: 'power2.in', onComplete: () => { s.visible = false; s.position.x -= 6; } }); } else { s.visible = true; gsap.from(s.position, { x: s.position.x + 6, duration: .9, ease: 'power2.out' }); } } }); }
 export function chop() { const k = parts.knife; if (!k) return; if (!parts.knifeY) { gsap.fromTo(k.rotation, { z: 0 }, { z: .5, duration: .08, yoyo: true, repeat: 1 }); return; }
-  gsap.killTweensOf(k.position); gsap.killTweensOf(k.rotation); const y0 = parts.knifeY;
-  gsap.timeline().to(k.position, { y: y0 + .24, duration: .09, ease: 'power2.out' }).to(k.position, { y: y0, duration: .07, ease: 'power3.in', onComplete: cutSlice });
+  if (parts.cutPending) cutSlice();   // a fast tap cut the last stroke short: still drop its slice
+  gsap.killTweensOf(k.position); gsap.killTweensOf(k.rotation); const y0 = parts.knifeY; parts.cutPending = true;
+  gsap.timeline().to(k.position, { y: y0 + .24, duration: .09, ease: 'power2.out' }).to(k.position, { y: y0, duration: .07, ease: 'power3.in', onComplete: () => { parts.cutPending = false; cutSlice(); } });
   gsap.timeline().to(k.rotation, { z: -.2, duration: .09, ease: 'power2.out' }).to(k.rotation, { z: 0, duration: .07, ease: 'power3.in' });
 }
 export function rattleLid() { const l = parts.lid; if (!l) return; const y0 = l.userData.y0 ?? (l.userData.y0 = l.position.y); gsap.fromTo(l.position, { y: y0 }, { y: y0 + .07, duration: .08, yoyo: true, repeat: 3 }); }
@@ -302,7 +304,7 @@ function glow(color, size, opacity = 1) {
 
 /* ---------- Blender props ---------- */
 export async function loadProps() {
-  let gl; try { gl = await new GLTFLoader().loadAsync('assets/models/props.glb'); } catch (e) { console.warn('props.glb failed, keeping procedural props', e); return; }
+  let gl; try { gl = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync('assets/models/props.glb'); } catch (e) { console.warn('props.glb failed, keeping procedural props', e); return; }
   const get = n => gl.scene.getObjectByName(n);
   gl.scene.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; o.material.envMapIntensity = 1.0; } });
   const drop = grp => [...grp.children].forEach(c => { if (c.userData.proc) grp.remove(c); });
@@ -339,6 +341,7 @@ export async function loadProps() {
   bulbs.forEach(b => { const g = glow(b.material.color.getHex(), .55, 0); b.add(g); b.userData.gl = g; });
   parts.signGlow = glow(0xFF6A50, 3.2, 0); parts.signGlow.position.copy(openSign.position); parts.signGlow.position.z += .1; scene.add(parts.signGlow);
   props = true;
+  if (/test=1/.test(location.search)) window.__k3 = { parts, scene };   // test hook
 }
 let props = false;
 
@@ -476,7 +479,7 @@ function initCloseups() {
 export function closeUp(key, i = 0, hold = 1700) {
   const c = CU[key]; if (!c || quality < .6) return;
   const z = document.getElementById('z-' + key), app = document.getElementById('app'); if (!z || !app || z.closest('.hide')) return;
-  if (key === 'prep') { c.look.set(STX.prep + .02, 1.62, .95); c.pos.set(STX.prep + 1.0, 2.3, 2.75); }
+  if (key === 'prep') { c.look.set(STX.prep - .12, 1.6, .95); c.pos.set(STX.prep - .75, 2.3, 2.8); }
   else { const bx = STX.cook + [-1.15, 0, 1.15][Math.min(i, 2)]; c.look.set(bx, 1.68, 1.05); c.pos.set(bx + .6, 2.08, 2.95); }
   c.hideAt = performance.now() + hold;
   if (!c.open) { const a = app.getBoundingClientRect(), r = z.getBoundingClientRect(), s = a.width / 1920 || 1, w = r.width / s - 28, h = Math.round(w * .56);

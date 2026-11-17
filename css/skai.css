@@ -315,3 +315,7 @@ body:not(.playing) #clock .cd{display:none}               /* "to midnight" count
 
 /* 3D close-up (picture-in-picture over the working station; the 3D shows through the empty middle) */
 .closeup{position:absolute;box-sizing:content-box;border:8px solid var(--sk-cream,#F6F0DF);border-radius:14px;box-shadow:0 12px 26px rgba(7,19,66,.45),inset 0 0 0 2px rgba(7,19,66,.25);pointer-events:none}
+
+/* Start button = Action / Investigate / Layout 01 (1315:5178) at its exact size: 453×133, label 34px, rivets 12px inset 14/10 */
+.btn.start{min-width:453px;min-height:133px;padding:0 72px;font-size:34px;border-radius:19px;
+  background-size:12px 12px;background-position:14px 10px,calc(100% - 14px) 10px,14px calc(100% - 10px),calc(100% - 14px) calc(100% - 10px)}

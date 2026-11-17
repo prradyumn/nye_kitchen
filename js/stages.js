@@ -48,7 +48,7 @@ export async function s1() {
     K3.setCam('dark', 0); K3.lightsOn(false);
     await new Promise(res => {
       const t = img('title', '', { style: 'width:980px;filter:drop-shadow(0 20px 40px rgba(0,0,0,.5))' });
-      const go = btn('Start mission', 'pulse', res);
+      const go = btn('Let’s investigate', 'start pulse', res);
       screen(h('div', { class: 'center' }, t, go));
       gsap.from(t, { y: -40, scale: .9, opacity: 0, duration: 1, ease: 'back.out(1.5)' });
       gsap.from(go, { y: 30, opacity: 0, delay: .6, duration: .6 });

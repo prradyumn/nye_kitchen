@@ -486,7 +486,7 @@ body.modal #howBtn{top:auto;bottom:26px}
 #cine .cs{font:800 30px/1 var(--body);letter-spacing:.3em;text-transform:uppercase;color:var(--gold);margin-top:12px}
 #cine .skip{position:absolute;right:40px;bottom:36px;pointer-events:auto;height:52px;padding:0 22px;border-radius:999px;background:rgba(255,255,255,.12);color:#fff;font:800 22px/52px var(--display);z-index:2}
 #cine .gate{position:absolute;inset:0;pointer-events:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;background:radial-gradient(ellipse 60% 45% at 50% 55%,rgba(8,9,30,.15),rgba(8,9,30,.55))}
-#cine .gate b{display:inline-flex;align-items:center;min-height:110px;padding:0 70px;border-radius:999px;font:800 52px/1 var(--display);color:var(--ink);background:linear-gradient(180deg,#FFC94A,#F4A51C);box-shadow:0 10px 0 #B86E00,0 0 60px rgba(255,209,102,.45);animation:pulse 1.6s ease-in-out infinite}
+#cine .gate b.btn{display:inline-flex;align-items:center;justify-content:center}
 #cine .gate small{font:700 24px/1 var(--body);color:#C9CDEF}
 #cine .gate .gt{width:900px;filter:drop-shadow(0 20px 40px rgba(0,0,0,.5))}
 body.cine #howBtn,body.cine #muteBtn{opacity:0;pointer-events:none}
