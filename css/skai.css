@@ -319,3 +319,4 @@ body:not(.playing) #clock .cd{display:none}               /* "to midnight" count
 /* Start button = Action / Investigate / Layout 01 (1315:5178) at its exact size: 453×133, label 34px, rivets 12px inset 14/10 */
 .btn.start{min-width:453px;min-height:133px;padding:0 72px;font-size:34px;border-radius:19px;
   background-size:12px 12px;background-position:14px 10px,calc(100% - 14px) 10px,14px calc(100% - 10px),calc(100% - 14px) calc(100% - 10px)}
+.panel .chip.ghostchip{background:transparent;color:var(--sk-gunmetal);box-shadow:inset 0 0 0 3px var(--sk-silver)}   /* "Leave it out" / "No thanks": an option, but a quiet one */

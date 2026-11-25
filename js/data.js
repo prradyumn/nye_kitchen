@@ -27,11 +27,11 @@ export const CLUES = [
 ];
 export const CLUE_LATE = { id: 'midnight', img: 'clue_midnight', text: "We don't mind waiting, just make it before midnight.", who: 'anya' };
 export const REPLAN = [
-  { id: 'batch', name: 'Batch by area', line: 'one rider takes a few boxes to the same area', img: 'opt_batch' },
+  { id: 'batch', name: 'Group by area', line: 'one rider takes a few boxes to one area', img: 'opt_batch' },
   { id: 'pickup', name: 'Customer pickup', line: 'families who live near come and collect', img: 'opt_pickup' },
   { id: 'pause', name: 'Pause new orders', line: 'no new orders for 10 minutes', img: 'opt_pause' },
   { id: 'simplify', name: 'Simplify the menu', line: 'take the slowest food off the menu', img: 'opt_simplify' },
-  { id: 'move', name: 'Move a child to Dispatch', line: 'an extra helper sends riders out', img: 'opt_move' },
+  { id: 'move', name: 'Move a chef to Dispatch', line: 'an extra helper sends riders out', img: 'opt_move' },
 ];
 // what each food "taught" the team once it met real orders (revealed in Step 5, hidden in Step 2)
 export const DISH_FACTS = {

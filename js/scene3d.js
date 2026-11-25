@@ -507,7 +507,7 @@ export function closeUp(key, i = 0, hold = 1700) {
     c.open = true; c.el.style.display = ''; if (c.tw) c.tw.kill(); c.tw = gsap.to(c, { k: 1, duration: .32, ease: 'back.out(1.5)' }); }
 }
 function streetCam(c) {   // a camera walking alongside the scooter on the street, a little ahead of it
-  const p = c.follow.g.position; c.look.set(p.x - .5, ROAD.y + .85, p.z); c.pos.set(p.x + 1.3, ROAD.y + 1.75, p.z + 4.4);
+  const p = c.follow.g.position; c.look.set(p.x - .5, ROAD.y + .85, p.z); c.pos.set(p.x + 1.3, ROAD.y + 1.75, ROAD.z + 3.9);   // z stays behind the play backdrop (z -.7)
 }
 function closeupPass() {
   const now = performance.now();

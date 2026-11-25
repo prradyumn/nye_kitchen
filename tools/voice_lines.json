@@ -1,25 +1,5 @@
 [
  {
-  "text": "Hi, I’m Meher Didi, and this is my kitchen. Tonight families order party boxes until midnight. If a box comes late or cold, a party goes without food.",
-  "who": "meher"
- },
- {
-  "text": "Nobody will tell you what good enough means tonight.. Our name is on every box. Your team decides what good enough means, tests it and changes it. At midnight, you judge the night.",
-  "who": "meher"
- },
- {
-  "text": "One party box for the whole night. Three foods. Pick what you think works. Tonight will tell us.",
-  "who": "meher"
- },
- {
-  "text": "Tonight your team sets the bar. A bar is like the bar in a high jump: the line you aim to get over. First, read what our customers say.",
-  "who": "meher"
- },
- {
-  "text": "What does good enough mean tonight?. Our bar is what every box should manage tonight. There is no right answer.",
-  "who": "meher"
- },
- {
   "text": "Before the real orders, let’s try one practice order together. Nothing counts yet.",
   "who": "meher"
  },
@@ -48,14 +28,6 @@
   "who": "meher"
  },
  {
-  "text": "That’s the whole trip: Prep, Cook, Pack, Dispatch. The bar under each station shows how many orders wait there. If a station glows gold, it’s falling behind, and anyone can tap HELP to jump in.",
-  "who": "meher"
- },
- {
-  "text": "Here come the real orders! Look after your own station, and keep an eye on the others.",
-  "who": "meher"
- },
- {
   "text": "Far side is slow tonight. Twenty-four minutes each way.",
   "who": "kabir"
  },
@@ -68,43 +40,11 @@
   "who": "meher"
  },
  {
-  "text": "Bad news, team. Six of our riders are heading home, family stuff. We are down to six. We will ride safe, not fast.",
-  "who": "kabir"
- },
- {
-  "text": "How many riders are free now?. Everyone except Chef 4 answers, using only what Chef 4 told you, so the whole team plans with the same facts.",
-  "who": "meher"
- },
- {
   "text": "There is no one right answer. Pick a plan you can explain.",
   "who": "meher"
  },
  {
-  "text": "Agree the facts once.",
-  "who": "meher"
- },
- {
-  "text": "What do families need to hear?. They’re getting ready for a party. Pick only what they need, in words they understand.",
-  "who": "meher"
- },
- {
-  "text": "What do riders need to know?. They’re on a scooter, about to leave. Pick what they need to do the job.",
-  "who": "meher"
- },
- {
-  "text": "How each audience heard you.",
-  "who": "meher"
- },
- {
   "text": "Ninety minutes to midnight. Same jobs, new plan, new bar. Let’s see how it works.",
-  "who": "meher"
- },
- {
-  "text": "What did our changes do?.",
-  "who": "meher"
- },
- {
-  "text": "One change, and the clue that shows why.",
   "who": "meher"
  },
  {
@@ -120,19 +60,7 @@
   "who": "meher"
  },
  {
-  "text": "Now: judges at a baking contest. What would good enough be here? Say it out loud together.",
-  "who": "meher"
- },
- {
   "text": "By your own bar, how did the night go?. Pass = it reached your bar. Fail = it didn’t.",
-  "who": "meher"
- },
- {
-  "text": "What a night!.",
-  "who": "meher"
- },
- {
-  "text": "Finish this sentence together, out loud:.",
   "who": "meher"
  },
  {
@@ -153,10 +81,6 @@
  },
  {
   "text": "Chef 2, you’re running Prep too. Tap the chopping board until every dot is filled.",
-  "who": "meher"
- },
- {
-  "text": "Every line passed. What does that tell you?. Was it easy because the kitchen did well, or because the bar was low?",
   "who": "meher"
  },
  {
@@ -336,18 +260,6 @@
   "who": "meher"
  },
  {
-  "text": "An honest mark shows what to change.",
-  "who": "meher"
- },
- {
-  "text": "Why do you think those lines failed?.",
-  "who": "meher"
- },
- {
-  "text": "Knowing why helps you change the right thing.",
-  "who": "meher"
- },
- {
   "text": "Failed:",
   "who": "meher"
  },
@@ -474,5 +386,345 @@
  {
   "text": "On time within 120 min",
   "who": "meher"
+ },
+ {
+  "text": "Hi! I’m Meher Didi. This is my kitchen.",
+  "who": "meher"
+ },
+ {
+  "text": "Tonight, families order party boxes until midnight.",
+  "who": "meher"
+ },
+ {
+  "text": "If a box is late or cold, a party has no food.",
+  "who": "meher"
+ },
+ {
+  "text": "Which station is yours tonight?. Each of you runs one part.",
+  "who": "meher"
+ },
+ {
+  "text": "Tonight, you decide what “good enough” means.",
+  "who": "meher"
+ },
+ {
+  "text": "Let’s make a party box for tonight.",
+  "who": "meher"
+ },
+ {
+  "text": "Pick any 3 foods. Real orders will show us how they travel.",
+  "who": "meher"
+ },
+ {
+  "text": "Pick 3 foods for the party box. A first try. There are no wrong answers.",
+  "who": "meher"
+ },
+ {
+  "text": "How will the food travel?. Pick one box for every order.",
+  "who": "meher"
+ },
+ {
+  "text": "Tonight, your team sets the bar.",
+  "who": "meher"
+ },
+ {
+  "text": "A bar is like a high jump. It’s the line you try to get over.",
+  "who": "meher"
+ },
+ {
+  "text": "First, read what our customers say.",
+  "who": "meher"
+ },
+ {
+  "text": "Messages from tonight’s customers. These messages are your clues.",
+  "who": "meher"
+ },
+ {
+  "text": "What does “good enough” mean tonight?. There is no right answer.",
+  "who": "meher"
+ },
+ {
+  "text": "Rewrite tonight’s bar. There is no right answer.",
+  "who": "meher"
+ },
+ {
+  "text": "Does our bar still fit tonight?. Fewer riders means slower trips. Your bar can change too.",
+  "who": "meher"
+ },
+ {
+  "text": "Here come the real orders! Look after your station, and watch the others too.",
+  "who": "meher"
+ },
+ {
+  "text": "That’s the whole trip: Prep, Cook, Pack, Dispatch.",
+  "who": "meher"
+ },
+ {
+  "text": "The bar under each station shows how many orders are waiting.",
+  "who": "meher"
+ },
+ {
+  "text": "If a station glows gold, it needs help. Anyone can tap HELP to jump in.",
+  "who": "meher"
+ },
+ {
+  "text": "Why do you think they failed?.",
+  "who": "meher"
+ },
+ {
+  "text": "Every line passed. Why?. Was the kitchen great, or was the bar too low?",
+  "who": "meher"
+ },
+ {
+  "text": "Change one thing for Shift 2. Think about what happened tonight.",
+  "who": "meher"
+ },
+ {
+  "text": "Which clue made you choose it?. A clue is something that really happened.",
+  "who": "meher"
+ },
+ {
+  "text": "Which station gets a helper?. The helper stays for all of Shift 2.",
+  "who": "meher"
+ },
+ {
+  "text": "Take one out, put one in.",
+  "who": "meher"
+ },
+ {
+  "text": "Pick the new box.",
+  "who": "meher"
+ },
+ {
+  "text": "Boxes are piling up at the door!. Only Chef 4 can see the rider card. Everyone else, ask them!",
+  "who": "meher"
+ },
+ {
+  "text": "How many riders are free now?. Everyone except Chef 4 answers.",
+  "who": "meher"
+ },
+ {
+  "text": "Anya’s family wrote back. The night has changed. Does your bar still fit?",
+  "who": "meher"
+ },
+ {
+  "text": "Pick one or two changes. Six riders. Eight boxes waiting.",
+  "who": "meher"
+ },
+ {
+  "text": "When will food arrive?. Agree as a team. Both messages will use it.",
+  "who": "meher"
+ },
+ {
+  "text": "Which area goes first?.",
+  "who": "meher"
+ },
+ {
+  "text": "How many boxes per trip?.",
+  "who": "meher"
+ },
+ {
+  "text": "How often do riders leave?.",
+  "who": "meher"
+ },
+ {
+  "text": "Now tell families. They’re getting ready for a party.",
+  "who": "meher"
+ },
+ {
+  "text": "Now tell riders. They’re on a scooter, about to leave.",
+  "who": "meher"
+ },
+ {
+  "text": "What should families hear?.",
+  "who": "meher"
+ },
+ {
+  "text": "What should riders hear?.",
+  "who": "meher"
+ },
+ {
+  "text": "Add a friendly line?.",
+  "who": "meher"
+ },
+ {
+  "text": "Read your message out loud.",
+  "who": "meher"
+ },
+ {
+  "text": "How did they hear you?.",
+  "who": "meher"
+ },
+ {
+  "text": "What did our change do?.",
+  "who": "meher"
+ },
+ {
+  "text": "Did we keep our promise?.",
+  "who": "meher"
+ },
+ {
+  "text": "Pick one change we made.",
+  "who": "meher"
+ },
+ {
+  "text": "Which clue shows why?",
+  "who": "meher"
+ },
+ {
+  "text": "Say it out loud.",
+  "who": "meher"
+ },
+ {
+  "text": "We swapped a food",
+  "who": "meher"
+ },
+ {
+  "text": "We changed the box",
+  "who": "meher"
+ },
+ {
+  "text": "We gave a station an extra helper",
+  "who": "meher"
+ },
+ {
+  "text": "We changed the bar",
+  "who": "meher"
+ },
+ {
+  "text": "We grouped orders by area",
+  "who": "meher"
+ },
+ {
+  "text": "We offered customer pickup",
+  "who": "meher"
+ },
+ {
+  "text": "We paused new orders",
+  "who": "meher"
+ },
+ {
+  "text": "We simplified the menu",
+  "who": "meher"
+ },
+ {
+  "text": "We moved a chef to Dispatch",
+  "who": "meher"
+ },
+ {
+  "text": "We changed the bar to “Before midnight”",
+  "who": "meher"
+ },
+ {
+  "text": "We changed the bar to “Within 30 min”",
+  "who": "meher"
+ },
+ {
+  "text": "We changed the bar to “Within 45 min”",
+  "who": "meher"
+ },
+ {
+  "text": "We changed the bar to “Within 60 min”",
+  "who": "meher"
+ },
+ {
+  "text": "We changed the bar to “Within 75 min”",
+  "who": "meher"
+ },
+ {
+  "text": "We changed the bar to “Within 90 min”",
+  "who": "meher"
+ },
+ {
+  "text": "Where else does “good enough” change?.",
+  "who": "meher"
+ },
+ {
+  "text": "Now:",
+  "who": "meher"
+ },
+ {
+  "text": "What is good enough here?",
+  "who": "meher"
+ },
+ {
+  "text": "a 5-year-old’s birthday party.",
+  "who": "meher"
+ },
+ {
+  "text": "judges at a baking contest.",
+  "who": "meher"
+ },
+ {
+  "text": "a teacher, due tomorrow.",
+  "who": "meher"
+ },
+ {
+  "text": "visitors at the science fair.",
+  "who": "meher"
+ },
+ {
+  "text": "you, at the beach today.",
+  "who": "meher"
+ },
+ {
+  "text": "a family who will live there for years.",
+  "who": "meher"
+ },
+ {
+  "text": "everyone, every time.",
+  "who": "meher"
+ },
+ {
+  "text": "For a 5-year-old’s birthday party, good enough means…",
+  "who": "meher"
+ },
+ {
+  "text": "For judges at a baking contest, good enough means…",
+  "who": "meher"
+ },
+ {
+  "text": "For a teacher, due tomorrow, good enough means…",
+  "who": "meher"
+ },
+ {
+  "text": "For visitors at the science fair, good enough means…",
+  "who": "meher"
+ },
+ {
+  "text": "For you, at the beach today, good enough means…",
+  "who": "meher"
+ },
+ {
+  "text": "For a family who will live there for years, good enough means…",
+  "who": "meher"
+ },
+ {
+  "text": "What you did tonight.",
+  "who": "meher"
+ },
+ {
+  "text": "What you found.",
+  "who": "meher"
+ },
+ {
+  "text": "Finish this sentence out loud:.",
+  "who": "meher"
+ },
+ {
+  "text": "Good enough isn’t perfect. It’s what people need, right now.",
+  "who": "meher"
+ },
+ {
+  "text": "Who is it for? What do they need?",
+  "who": "meher"
+ },
+ {
+  "text": "Bad news, team. Six riders had to go home.",
+  "who": "kabir"
+ },
+ {
+  "text": "We have six riders left. We will ride safe, not fast.",
+  "who": "kabir"
  }
 ]

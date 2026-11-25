@@ -111,3 +111,12 @@ Every screen shows only what the child needs for the current decision: one read-
 - `assets/models/props.glb` is meshopt-compressed (866 → 343 KB) and decoded by `js/vendor/meshopt_decoder.module.js`. After regenerating it with `tools/blender_props.py`, compress it again: `npx @gltf-transform/cli dedup props.glb a.glb && npx @gltf-transform/cli meshopt a.glb props.glb`. Node names stay the same, which the code relies on.
 - `js/vendor/three.module.min.js` is three.js r165 trimmed to the 90 classes the game uses (678 → 520 KB). If you start using a new `THREE.X`, rebuild it: `cd /tmp && npm i three@0.165.0 esbuild && node <project>/tools/build_three.mjs <project>`.
 - Voice clips are Ogg Opus. Every picture is WebP; the SKAI frame pieces stay SVG because they are vector drawings, which are smaller and stay sharp at any scale.
+
+## Short screens for young readers
+Feedback from teachers: Grade 4–6 children can't read big blocks of text. So every screen now asks for one thing, with a short heading and at most one short line under it, and Meher's longer speeches are split into several short bubbles.
+- **Step 7 messages:** the facts are agreed one question per screen (4 screens). Each message is then built one line at a time: for each fact the team picks the families' wording, the riders' wording, or "Leave it out", then a friendly line, then reads the whole message out loud before sending.
+- **Step 9:** "What did our change do?" and "Did we keep our promise?" are two screens; each chef's turn is pick a change → pick the clue → say the sentence out loud.
+- **Step 11:** "What you did tonight" and "What you found" are two screens; the ending is the sentence to finish → Meher's words → the question to keep.
+- Plainer words throughout ("Group by area", "Move a chef to Dispatch", "How did they hear you?").
+- Logged events and their fields are unchanged. New spoken lines are listed in `tools/voice_lines.json`; until they are recorded with `tools/voice_gen.py` they use the browser's voice.
+
